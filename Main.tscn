@@ -639,7 +639,7 @@ stream = ExtResource( 5 )
 [node name="Lantern" type="AnimatedSprite" parent="."]
 position = Vector2( 369, 161 )
 frames = SubResource( 28 )
-frame = 3
+frame = 10
 playing = true
 
 [node name="TextureRect14" type="TextureRect" parent="."]
@@ -770,4 +770,3 @@ tile_data = PoolIntArray( -852013, 2, 0, -786476, 2, 0, -720939, 2, 0, -655402, 
 
 [connection signal="timeout" from="MobTimer" to="." method="OnMobTimerTimeout"]
 [connection signal="timeout" from="StartTimer" to="." method="OnStartTimerTimeout"]
-[connection signal="StartGame" from="HUD" to="." method="NewGame"]
