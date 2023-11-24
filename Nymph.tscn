@@ -106,7 +106,7 @@ region = Rect2( 128, 48, 64, 48 )
 [sub_resource type="SpriteFrames" id=26]
 animations = [ {
 "frames": [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ) ],
-"loop": true,
+"loop": false,
 "name": "attack",
 "speed": 5.0
 }, {
@@ -164,7 +164,24 @@ __meta__ = {
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 26 )
 animation = "idle"
+frame = 1
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource( 27 )
+
+[node name="CooldownTimer" type="Timer" parent="."]
+process_mode = 0
+wait_time = 5.0
+one_shot = true
+__meta__ = {
+"_editor_description_": ""
+}
+
+[node name="FinishCastTimer" type="Timer" parent="."]
+process_mode = 0
+wait_time = 2.0
+one_shot = true
+
+[connection signal="animation_finished" from="AnimatedSprite" to="." method="AiFinishAttackAnimation"]
+[connection signal="timeout" from="FinishCastTimer" to="." method="AiFinishCast"]

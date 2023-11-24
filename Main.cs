@@ -8,6 +8,9 @@ public class Main : Node
 	public PackedScene mobScene;
 #pragma warning restore 649
 
+	[Export]
+	public PackedScene FireScene { get; set; }
+
 	public int score;
 
 	public Vector2 screenSize; // Size of the game window.
@@ -17,6 +20,8 @@ public class Main : Node
 		var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var NymphNode = GetNode<Nymph>("Nymph");
 		NymphNode.Target = PlayerCharNode;
+		var NymphNode2 = GetNode<Nymph>("Nymph2");
+		NymphNode2.Target = PlayerCharNode;
 		screenSize = PlayerCharNode.GetViewportRect().Size;
 		GD.Randomize();
 	}

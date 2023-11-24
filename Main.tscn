@@ -1,10 +1,11 @@
-[gd_scene load_steps=69 format=2]
+[gd_scene load_steps=71 format=2]
 
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://Mob.tscn" type="PackedScene" id=2]
 [ext_resource path="res://assets/tree2.png" type="Texture" id=3]
 [ext_resource path="res://HUD.tscn" type="PackedScene" id=4]
 [ext_resource path="res://assets/forest-level-12-wip.ogg" type="AudioStream" id=5]
+[ext_resource path="res://DryadFire.tscn" type="PackedScene" id=6]
 [ext_resource path="res://assets/704f4099-621c-4610-9c92-ac6bf4182bd9-double-size.png" type="Texture" id=7]
 [ext_resource path="res://assets/plant-1.png" type="Texture" id=8]
 [ext_resource path="res://assets/terrain2.png" type="Texture" id=9]
@@ -40,6 +41,7 @@
 [ext_resource path="res://assets/goblin32x48.png" type="Texture" id=39]
 [ext_resource path="res://Nymph.tscn" type="PackedScene" id=40]
 [ext_resource path="res://assets/parallax-1-bushes.png" type="Texture" id=41]
+[ext_resource path="res://assets/441497__matrixxx__retro-explosion-05.wav" type="AudioStream" id=42]
 
 [sub_resource type="Curve2D" id=1]
 _data = {
@@ -380,6 +382,7 @@ points = PoolVector2Array( 0, 0, 16, 0, 16, 16, 0, 16 )
 
 [node name="Main" type="Node"]
 script = ExtResource( 1 )
+FireScene = ExtResource( 6 )
 mobScene = ExtResource( 2 )
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
@@ -463,6 +466,9 @@ color = Color( 0, 0, 0, 1 )
 [node name="Nymph" parent="." instance=ExtResource( 40 )]
 position = Vector2( 133, 153 )
 
+[node name="Nymph2" parent="." instance=ExtResource( 40 )]
+position = Vector2( 421, 153 )
+
 [node name="TextureRect" type="TextureRect" parent="."]
 visible = false
 margin_right = 40.0
@@ -479,9 +485,9 @@ margin_bottom = 320.0
 texture = ExtResource( 3 )
 
 [node name="Tree5" type="TextureRect" parent="TreeGroup"]
-margin_left = 282.0
+margin_left = 276.0
 margin_top = -6.0
-margin_right = 602.0
+margin_right = 596.0
 margin_bottom = 314.0
 texture = ExtResource( 3 )
 
@@ -636,10 +642,13 @@ curve = SubResource( 1 )
 [node name="Music" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 5 )
 
+[node name="FireSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 42 )
+
 [node name="Lantern" type="AnimatedSprite" parent="."]
 position = Vector2( 369, 161 )
 frames = SubResource( 28 )
-frame = 10
+frame = 5
 playing = true
 
 [node name="TextureRect14" type="TextureRect" parent="."]
