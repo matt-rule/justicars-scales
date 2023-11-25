@@ -103,7 +103,6 @@ playing = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 offset = Vector2( 0, -32 )
-current = true
 
 [node name="StartPosition" type="Position2D" parent="."]
 position = Vector2( 294, 128 )

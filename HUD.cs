@@ -2,6 +2,8 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+public enum DialogBehaviour { QuitToMainMenu, RestartGame };
+
 public class HUD : CanvasLayer
 {
 	[Signal]
@@ -9,6 +11,8 @@ public class HUD : CanvasLayer
 	
 	public List<String> Lines = new List<string>();
 	public int LineNumber = 0;
+	
+	public DialogBehaviour DialogBehaviour = DialogBehaviour.RestartGame;
 	
 	public void ShowDialog(String line)
 	{
@@ -47,7 +51,7 @@ public class HUD : CanvasLayer
 	
 	public void ShowGameMenu()
 	{
-		GetNode<Panel>("MenuPanel").Show();
+		GetNode<Panel>("PauseMenuPanel").Show();
 	}
 
 	public void OnStartButtonPressed()
@@ -59,7 +63,7 @@ public class HUD : CanvasLayer
 			GetNode<Panel>("InfoPanel").Hide();
 			EmitSignal(nameof(StartGame));
 			var main = GetParent();
-			main.CallDeferred("NewGame");
+			main.GetNode<Level1>("Level1").CallDeferred("NewGame");
 			// End of TODO
 			GetTree().Paused = false;
 		}
@@ -76,22 +80,71 @@ public class HUD : CanvasLayer
 	private void ResumeButtonPressed()
 	{
 		GetTree().Paused = false;
-		GetNode<Panel>("MenuPanel").Hide();
+		GetNode<Panel>("PauseMenuPanel").Hide();
 	}
 
 	private void RestartGameButtonPressed()
 	{
-		GetNode<Panel>("MenuPanel").Hide();
-		GetNode<Panel>("RestartDialogPanel").Show();
+		GetNode<Panel>("PauseMenuPanel").Hide();
+		var restartDialogPanel = GetNode<Panel>("RestartDialogPanel");
+		var vbox = restartDialogPanel.GetNode<VBoxContainer>("VBoxContainer");
+		vbox.GetNode<Label>("RestartPromptLabel").Show();
+		vbox.GetNode<Label>("MainMenuPromptLabel").Hide();
+		restartDialogPanel.Show();
+		DialogBehaviour = DialogBehaviour.RestartGame;
 	}
 
 	private void YesButtonPressed()
 	{
+		switch (DialogBehaviour)
+		{
+			case DialogBehaviour.QuitToMainMenu:
+				{
+					Main mainNode = GetParent<Main>();
+					mainNode.GetNode<Camera2D>("MainMenuCam").Current = true;
+					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
+					mainNode.GetNode("Level1").QueueFree();
+					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
+					GetNode<Label>("MainMenuLabel").Show();
+					GetNode<Panel>("MainMenuPanel").Show();
+					GetNode<Panel>("RestartDialogPanel").Hide();
+					GetTree().Paused = false;
+				}
+				break;
+			case DialogBehaviour.RestartGame:
+				{
+					
+				}
+				break;
+			default:
+				break;
+		}
 	}
 
 	private void NoButtonPressed()
 	{
 		GetNode<Panel>("RestartDialogPanel").Hide();
-		GetNode<Panel>("MenuPanel").Show();
+		GetNode<Panel>("PauseMenuPanel").Show();
+	}
+	
+	private void OnNewGameButtonPressed()
+	{
+		GetParent<Main>().NewGame();
+	}
+
+	private void OnCreditsButtonPressed()
+	{
+		// Replace with function body.
+	}
+	
+	private void MainMenuButtonPressed()
+	{
+		GetNode<Panel>("PauseMenuPanel").Hide();
+		var restartDialogPanel = GetNode<Panel>("RestartDialogPanel");
+		var vbox = restartDialogPanel.GetNode<VBoxContainer>("VBoxContainer");
+		vbox.GetNode<Label>("MainMenuPromptLabel").Show();
+		vbox.GetNode<Label>("RestartPromptLabel").Hide();
+		restartDialogPanel.Show();
+		DialogBehaviour = DialogBehaviour.QuitToMainMenu;
 	}
 }

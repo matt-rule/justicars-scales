@@ -21,7 +21,8 @@ public class DryadFire : Area2D
 			GetNode<AnimatedSprite>("AnimatedSprite");
 		sprite.Animation = "activate";
 		
-		Main mainNode = GetParent<Main>();
+		Level1 levelNode = GetParent<Level1>();
+		Main mainNode = levelNode.GetParent<Main>();
 		AudioStreamPlayer2D soundPlayer = mainNode
 			.GetNode<Node>("MediaNode")
 			.GetNode<AudioStreamPlayer2D>("FireSound");
@@ -29,12 +30,7 @@ public class DryadFire : Area2D
 		{
 			Target.Health -= 80;
 			if (Target.Health <= 0)
-			{
-				Target.Position = GetParent().GetNode<Position2D>("StartPosition").Position;
-				Target.Velocity = new Vector2(0, 0);
-				Target.Health = 100;
-				Target.Grounded = false;
-			}
+				mainNode.ProcessPlayerDeath();
 		}
 		soundPlayer.Position = Target.Position;
 		soundPlayer.Play();
