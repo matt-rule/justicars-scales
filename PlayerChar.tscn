@@ -1,57 +1,97 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=25 format=2]
 
-[ext_resource path="res://assets/48x48test.png" type="Texture" id=1]
-[ext_resource path="res://assets/running-animation48x48-white-clothes.png" type="Texture" id=2]
+[ext_resource path="res://assets/sfx/77611__joelaudio__sfx_attack_sword_001.wav" type="AudioStream" id=1]
+[ext_resource path="res://assets/running-animation48x48-white-clothes-spritesheet.png" type="Texture" id=2]
 [ext_resource path="res://PlayerChar.cs" type="Script" id=3]
+[ext_resource path="res://assets/sfx/221756__motion_s__grass-footsteps4.wav" type="AudioStream" id=4]
+[ext_resource path="res://assets/sfx/353542__maxmakessounds__hup.wav" type="AudioStream" id=5]
+[ext_resource path="res://assets/sfx/263011__dermotte__sword_02.wav" type="AudioStream" id=6]
 
 [sub_resource type="AtlasTexture" id=3]
 atlas = ExtResource( 2 )
-region = Rect2( 0, 0, 48, 48 )
+region = Rect2( 720, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=4]
 atlas = ExtResource( 2 )
-region = Rect2( 48, 0, 48, 48 )
+region = Rect2( 800, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=5]
 atlas = ExtResource( 2 )
-region = Rect2( 96, 0, 48, 48 )
+region = Rect2( 880, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=6]
 atlas = ExtResource( 2 )
-region = Rect2( 144, 0, 48, 48 )
+region = Rect2( 960, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=7]
 atlas = ExtResource( 2 )
-region = Rect2( 192, 0, 48, 48 )
+region = Rect2( 1040, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=8]
 atlas = ExtResource( 2 )
-region = Rect2( 240, 0, 48, 48 )
+region = Rect2( 1120, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=9]
 atlas = ExtResource( 2 )
-region = Rect2( 288, 0, 48, 48 )
+region = Rect2( 0, 0, 80, 48 )
 
 [sub_resource type="AtlasTexture" id=10]
 atlas = ExtResource( 2 )
-region = Rect2( 336, 0, 48, 48 )
+region = Rect2( 80, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=11]
+atlas = ExtResource( 2 )
+region = Rect2( 160, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=12]
+atlas = ExtResource( 2 )
+region = Rect2( 240, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=13]
+atlas = ExtResource( 2 )
+region = Rect2( 320, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=14]
+atlas = ExtResource( 2 )
+region = Rect2( 400, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=15]
+atlas = ExtResource( 2 )
+region = Rect2( 480, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=16]
+atlas = ExtResource( 2 )
+region = Rect2( 560, 0, 80, 48 )
+
+[sub_resource type="AtlasTexture" id=17]
+atlas = ExtResource( 2 )
+region = Rect2( 640, 0, 80, 48 )
 
 [sub_resource type="SpriteFrames" id=1]
 animations = [ {
-"frames": [ SubResource( 3 ), SubResource( 4 ), SubResource( 5 ), SubResource( 6 ), SubResource( 7 ), SubResource( 8 ), SubResource( 9 ), SubResource( 10 ) ],
+"frames": [ SubResource( 3 ), SubResource( 4 ), SubResource( 5 ), SubResource( 6 ), SubResource( 7 ), SubResource( 8 ) ],
+"loop": true,
+"name": "attack",
+"speed": 12.0
+}, {
+"frames": [ SubResource( 9 ), SubResource( 10 ), SubResource( 11 ), SubResource( 12 ), SubResource( 13 ), SubResource( 14 ), SubResource( 15 ), SubResource( 16 ) ],
 "loop": true,
 "name": "running",
 "speed": 12.0
 }, {
-"frames": [ ExtResource( 1 ) ],
+"frames": [ SubResource( 17 ) ],
 "loop": true,
 "name": "standing",
 "speed": 12.0
 } ]
 
 [sub_resource type="CapsuleShape2D" id=2]
-radius = 15.0
-height = 16.0
+radius = 7.0
+height = 32.0
+
+[sub_resource type="CapsuleShape2D" id=18]
+radius = 2.32886
+height = 27.8859
 
 [node name="PlayerChar" type="KinematicBody2D"]
 script = ExtResource( 3 )
@@ -59,6 +99,7 @@ script = ExtResource( 3 )
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 1 )
 animation = "standing"
+playing = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 offset = Vector2( 0, -32 )
@@ -68,4 +109,51 @@ current = true
 position = Vector2( 294, 128 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2( -1, 1 )
 shape = SubResource( 2 )
+
+[node name="GrassSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 4 )
+
+[node name="SwingSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 6 )
+volume_db = -16.892
+
+[node name="HitSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 1 )
+volume_db = -8.056
+
+[node name="JumpSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 5 )
+
+[node name="HPRectBg" type="ColorRect" parent="."]
+margin_left = -19.0
+margin_top = -28.0
+margin_right = 19.0
+margin_bottom = -26.0
+rect_pivot_offset = Vector2( 19, 1 )
+color = Color( 0.380392, 0, 0, 1 )
+
+[node name="HPRectRemaining" type="ColorRect" parent="."]
+margin_left = -19.0
+margin_top = -28.0
+margin_right = 19.0
+margin_bottom = -26.0
+rect_pivot_offset = Vector2( 19, 1 )
+
+[node name="AttackDelay" type="Timer" parent="."]
+process_mode = 0
+wait_time = 0.12
+one_shot = true
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="SwordCollisionShape" type="CollisionShape2D" parent="Area2D"]
+position = Vector2( 16, -4 )
+rotation = 1.78547
+shape = SubResource( 18 )
+
+[connection signal="animation_finished" from="AnimatedSprite" to="." method="PlayerCharAnimationFinished"]
+[connection signal="timeout" from="AttackDelay" to="." method="OnAttackProcess"]
+[connection signal="body_entered" from="Area2D" to="." method="OnSwordCollisionBodyEntered"]
+[connection signal="body_exited" from="Area2D" to="." method="OnSwordCollisionBodyExited"]

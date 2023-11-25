@@ -1,7 +1,7 @@
 [gd_scene load_steps=30 format=2]
 
 [ext_resource path="res://assets/nymph32x48-green.png" type="Texture" id=1]
-[ext_resource path="res://Nymph.cs" type="Script" id=2]
+[ext_resource path="res://Dryad.cs" type="Script" id=2]
 
 [sub_resource type="AtlasTexture" id=1]
 atlas = ExtResource( 1 )
@@ -152,8 +152,8 @@ animations = [ {
 } ]
 
 [sub_resource type="CapsuleShape2D" id=27]
-radius = 11.0
-height = 22.0
+radius = 6.0
+height = 36.0
 
 [node name="Nymph" type="KinematicBody2D"]
 script = ExtResource( 2 )
@@ -164,15 +164,15 @@ __meta__ = {
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 26 )
 animation = "idle"
-frame = 1
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2( -2, 0 )
 shape = SubResource( 27 )
 
 [node name="CooldownTimer" type="Timer" parent="."]
 process_mode = 0
-wait_time = 5.0
+wait_time = 3.0
 one_shot = true
 __meta__ = {
 "_editor_description_": ""
@@ -180,8 +180,23 @@ __meta__ = {
 
 [node name="FinishCastTimer" type="Timer" parent="."]
 process_mode = 0
-wait_time = 2.0
+wait_time = 1.5
 one_shot = true
+
+[node name="HPRectBg" type="ColorRect" parent="."]
+margin_left = -19.0
+margin_top = -28.0
+margin_right = 19.0
+margin_bottom = -26.0
+rect_pivot_offset = Vector2( 19, 1 )
+color = Color( 0.380392, 0, 0, 1 )
+
+[node name="HPRectRemaining" type="ColorRect" parent="."]
+margin_left = -19.0
+margin_top = -28.0
+margin_right = 19.0
+margin_bottom = -26.0
+rect_pivot_offset = Vector2( 19, 1 )
 
 [connection signal="animation_finished" from="AnimatedSprite" to="." method="AiFinishAttackAnimation"]
 [connection signal="timeout" from="FinishCastTimer" to="." method="AiFinishCast"]
