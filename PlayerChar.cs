@@ -73,6 +73,56 @@ public class PlayerChar : KinematicBody2D
 				GetNode<Timer>("AttackDelay").Start();
 			Attacking = true;
 		}
+		
+		if (Input.IsActionJustPressed("use_hourglass"))
+		{
+			if (!Attacking)
+			{
+				var main = GetParent().GetParent();
+				var hud = main.GetNode<HUD>("HUD");
+				var media = main.GetNode("MediaNode");
+
+				var overlay = hud.GetNode<AnimatedSprite>("ItemOverlay");
+				overlay.Animation = "hourglass";
+				overlay.Modulate = new Color(1, 1, 1, 0);
+				overlay.Show();
+
+				var tween = GetTree().CreateTween();
+				tween.TweenProperty(overlay, "modulate",
+					new Color(1, 1, 1, 0.8f), 0.4f);
+				tween.TweenInterval( 2 );
+				tween.TweenProperty(overlay, "modulate",
+					new Color(1, 1, 1, 0), 1.2f);
+					
+				var hourglassSound = media.GetNode<AudioStreamPlayer>("HourglassSound");
+				hourglassSound.Play();
+			}
+		}
+		
+		if (Input.IsActionJustPressed("use_scales"))
+		{
+			if (!Attacking)
+			{
+				var main = GetParent().GetParent();
+				var hud = main.GetNode<HUD>("HUD");
+				var media = main.GetNode("MediaNode");
+
+				var overlay = hud.GetNode<AnimatedSprite>("ItemOverlay");
+				overlay.Animation = "scales";
+				overlay.Modulate = new Color(1, 1, 1, 0);
+				overlay.Show();
+
+				var tween = GetTree().CreateTween();
+				tween.TweenProperty(overlay, "modulate",
+					new Color(1, 1, 1, 0.8f), 0.4f);
+				tween.TweenInterval( 2 );
+				tween.TweenProperty(overlay, "modulate",
+					new Color(1, 1, 1, 0), 1.2f);
+					
+				var scalesSound = media.GetNode<AudioStreamPlayer>("ScalesSound");
+				scalesSound.Play();
+			}
+		}
 
 		if (Velocity.x != 0)
 		{
@@ -129,6 +179,7 @@ public class PlayerChar : KinematicBody2D
 		else
 			Velocity.y += GRAVITY * delta; // Gravity
 
+		bool wasGrounded = Grounded;
 		if (Velocity.x != 0)
 		{
 			if (Grounded && !IsOnWall())
@@ -140,12 +191,32 @@ public class PlayerChar : KinematicBody2D
 			Grounded = false;
 		}
 
+		float oldYVelocity = Velocity.y;
+
 		// Up vector required for IsOnFloor
 		Velocity = MoveAndSlide(Velocity, Vector2.Up);
 // Note there is also MoveAndSlideWithSnap
 		
-		if (IsOnFloor())	// Note there is an IsOnWall too, but not used atm
+		if (IsOnFloor())
+		{
 			Grounded = true;
+			
+			if (!wasGrounded)
+			{
+				var grassSound = GetNode<AudioStreamPlayer2D>("GrassSound");
+				if (!grassSound.Playing)
+					grassSound.Play();
+					
+				if (oldYVelocity > 360)
+				{
+					var landingSound =
+						GetParent().GetParent().GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("LandingSound");
+					landingSound.Position = Position;
+					landingSound.Play();
+				}
+			}
+		}
 	}
 
 	private void PlayerCharAnimationFinished()
@@ -184,10 +255,23 @@ public class PlayerChar : KinematicBody2D
 		if (dryad.InPlayerSwordRange)
 		{
 			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
+			hitSound.Play();
 			dryad.Health -= 10;
 			if (dryad.Health <= 0)
+			{
+				var deathSound = GetParent().GetParent().GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
+				deathSound.Position = dryad.Position;
+				deathSound.Play();
 				dryad.QueueFree();
-			hitSound.Play();
+			}
+			else
+			{
+				var onHitSound = GetParent().GetParent().GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
+				onHitSound.Position = dryad.Position;
+				onHitSound.Play();
+			}
 		}
 		//if (dyrad.GetNode<CollisionShape2D>("CollisionShape2D");
 		// test intersection between sword collision shape and enemy collision shape

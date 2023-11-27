@@ -4,6 +4,13 @@ using System.Collections.Generic;
 
 public enum DialogBehaviour { QuitToMainMenu, RestartGame };
 
+//public enum ItemOverlay
+//{
+//	None = 0,
+//	Hourglass = 1,
+//	Scales = 2
+//}
+
 public class HUD : CanvasLayer
 {
 	[Signal]
@@ -13,6 +20,25 @@ public class HUD : CanvasLayer
 	public int LineNumber = 0;
 	
 	public DialogBehaviour DialogBehaviour = DialogBehaviour.RestartGame;
+	
+//	public ItemOverlay ItemOverlayType = ItemOverlay.None;
+//	public int ItemOverlaySinceMillisec = 0;
+	
+	public void ShowHint(String line)
+	{
+		Panel infoPanel = GetNode<Panel>("MiniInfoPanel");
+		
+		Label infoLabel = infoPanel.GetNode("MarginContainer").GetNode<Label>("InfoLabel");
+		infoLabel.Text = line;
+		
+		infoPanel.Show();
+	}
+	
+	public void HideHint()
+	{
+		Panel infoPanel = GetNode<Panel>("MiniInfoPanel");
+		infoPanel.Hide();
+	}
 	
 	public void ShowDialog(String line)
 	{
@@ -105,6 +131,7 @@ public class HUD : CanvasLayer
 					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
+					GetNode<TextureRect>("MainMenuLogo").Show();
 					GetNode<Label>("MainMenuLabel").Show();
 					GetNode<Panel>("MainMenuPanel").Show();
 					GetNode<Panel>("RestartDialogPanel").Hide();
@@ -146,5 +173,9 @@ public class HUD : CanvasLayer
 		vbox.GetNode<Label>("RestartPromptLabel").Hide();
 		restartDialogPanel.Show();
 		DialogBehaviour = DialogBehaviour.QuitToMainMenu;
+	}
+	
+	public override void _Process(float delta)
+	{
 	}
 }

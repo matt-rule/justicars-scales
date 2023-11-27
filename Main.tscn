@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://Level1.tscn" type="PackedScene" id=2]
@@ -8,6 +8,11 @@
 [ext_resource path="res://assets/parallax-4.png" type="Texture" id=6]
 [ext_resource path="res://assets/parallax-1-bushes.png" type="Texture" id=7]
 [ext_resource path="res://assets/sfx/262260__gowlermusic__horror-sounds3.wav" type="AudioStream" id=8]
+[ext_resource path="res://assets/sfx/467604__triqystudio__openbag.wav" type="AudioStream" id=9]
+[ext_resource path="res://assets/sfx/492236__soundflakes__tyrael-spellbreaking.wav" type="AudioStream" id=10]
+[ext_resource path="res://assets/sfx/478809__ianstargem__scifi-hit-thing-2.wav" type="AudioStream" id=11]
+[ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice3.wav" type="AudioStream" id=12]
+[ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice.wav" type="AudioStream" id=13]
 [ext_resource path="res://assets/441497__matrixxx__retro-explosion-05.wav" type="AudioStream" id=42]
 [ext_resource path="res://assets/524689__klankbeeld__forest-summer-roond-007-200619_0186.mp3" type="AudioStream" id=43]
 
@@ -111,11 +116,33 @@ stream = ExtResource( 8 )
 stream = ExtResource( 42 )
 volume_db = -8.412
 
+[node name="LandingSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 9 )
+volume_db = -26.552
+
+[node name="DryadAttackedSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 12 )
+volume_db = -16.647
+
+[node name="DryadDeathSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 13 )
+volume_db = -0.552
+
 [node name="Ambient" type="AudioStreamPlayer" parent="MediaNode"]
 pause_mode = 2
 stream = ExtResource( 43 )
 volume_db = -27.099
 autoplay = true
+
+[node name="ScalesSound" type="AudioStreamPlayer" parent="MediaNode"]
+pause_mode = 2
+stream = ExtResource( 10 )
+volume_db = -12.242
+
+[node name="HourglassSound" type="AudioStreamPlayer" parent="MediaNode"]
+pause_mode = 2
+stream = ExtResource( 11 )
+volume_db = -12.242
 
 [node name="DeathTimer" type="Timer" parent="."]
 wait_time = 4.0

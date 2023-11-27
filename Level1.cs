@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class Level1 : Node
 {
-	public const float LANTERN_DISTANCE = 50f;
+	public const float LANTERN_DISTANCE = 30f;
 
 	public bool ShownStory = false;
 	
@@ -20,7 +20,13 @@ public class Level1 : Node
 	const String STORY_TEXT_1 = "\"Pagans!\" the head priest was yelling hysterically at me.  \"Drive them from these lands!\"";
 	const String STORY_TEXT_2 = "But so far I have yet to see a single human.  Instead, my mission has led me deeper into the forest.  I am no longer sure of my way.";
 	
-	const String LANTERN_TEXT_1 = "The known gods are subject to the passage of time. The outer gods are not.";
+	const String LANTERN_TEXT_1_OLD = "The known gods are subject to the passage of time. The outer gods are not.";
+	const String LANTERN_TEXT_1 = "Use the arrow keys or thumbstick to move";
+	const String LANTERN_TEXT_2 = "To jump, press up (Cross or Xbox A)";
+	const String LANTERN_TEXT_3 = "To attack, press Q or R1";
+	const String LANTERN_TEXT_4 = "To use the bell, Press W (Square or Xbox X)";
+	const String LANTERN_TEXT_5 = "To use the hourglass, Press E (Circle or Xbox B)";
+	const String LANTERN_TEXT_6 = "To use the scales, press R (Triangle or Xbox Y)";
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -97,16 +103,57 @@ public class Level1 : Node
 		
 		// Check distance to lantern
 		var lantern = GetNode<AnimatedSprite>("Lantern");
+		var lantern2 = GetNode<AnimatedSprite>("Lantern2");
+		var lantern3 = GetNode<AnimatedSprite>("Lantern3");
+		var lantern4 = GetNode<AnimatedSprite>("Lantern4");
+		var lantern5 = GetNode<AnimatedSprite>("Lantern5");
+		var lantern6 = GetNode<AnimatedSprite>("Lantern6");
 		var hud = GetParent().GetNode<HUD>("HUD");
 		
-		if (!ShownStory && (playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
+		if (Math.Abs(playerCharNode.Position.x - lantern.Position.x) < LANTERN_DISTANCE)
 		{
-			List<String> lines = new List<string>();
-			lines.Add(STORY_TEXT_1);
-			lines.Add(STORY_TEXT_2);
-			hud.ShowDialog(lines);
-			ShownStory = true;
+			lantern.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_1);
 		}
+		else if (Math.Abs(playerCharNode.Position.x - lantern2.Position.x) < LANTERN_DISTANCE)
+		{
+			lantern2.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_2);
+		}
+		else if (Math.Abs(playerCharNode.Position.x - lantern3.Position.x) < LANTERN_DISTANCE)
+		{
+			lantern3.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_3);
+		}
+		else if (Math.Abs(playerCharNode.Position.x - lantern4.Position.x) < LANTERN_DISTANCE)
+		{
+			lantern4.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_4);
+		}
+		else if (Math.Abs(playerCharNode.Position.x - lantern5.Position.x) < LANTERN_DISTANCE)
+		{
+			lantern5.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_5);
+		}
+		else if (Math.Abs(playerCharNode.Position.x - lantern6.Position.x) < LANTERN_DISTANCE)
+		{
+			lantern6.Animation = "on";
+			hud.ShowHint(LANTERN_TEXT_6);
+		}
+		else
+		{
+			hud.HideHint();
+		}
+		
+//		if (!ShownStory && (playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
+//		{
+//			List<String> lines = new List<string>();
+//			lines.Add(STORY_TEXT_1);
+//			lines.Add(STORY_TEXT_2);
+//			hud.ShowDialog(lines);
+//			ShownStory = true;
+//		}
+		
 		//var infoPanel = GetNode<HUD>("HUD").GetNode<Panel>("MiniInfoPanel");
 //		if ((playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
 //		{
