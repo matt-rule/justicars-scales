@@ -58,6 +58,7 @@ public class Dryad : KinematicBody2D
 	public void AiFinishCast()
 	{
 		Level1 levelNode = GetParent().GetParent<Level1>();
+		Node dryadFiresNode = levelNode.GetNode("DryadFires");
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
@@ -74,7 +75,7 @@ public class Dryad : KinematicBody2D
 			AnimatedSprite fireSprite = 
 				fireInstance.GetNode<AnimatedSprite>("AnimatedSprite");
 			fireSprite.Animation = "simmer";
-			levelNode.AddChild(fireInstance);
+			dryadFiresNode.AddChild(fireInstance);
 		}
 	}
 	

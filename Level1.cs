@@ -1,41 +1,45 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-//
-//public class PlayerHistoricalState
-//{
-//	PlayerChar Entity;
-//	bool FacingLeft;
-//	int Health;
-//	int BleedPosition;
-//	Vector2 Position;
-//	Vector2 Velocity;
-//}
-//
-//public class DryadHistoricalState
-//{
-//	Dryad Entity;
-//	bool FacingLeft;
-//	int Health;
-//	Vector2 Position;
-//	Vector2 Velocity;
-//	float CastProgressSecs;
-//	float CastCooldownSecs;
-//}
-//
-//public class DryadFireHistoricalState
-//{
-//	DryadFire Entity;
-//	int CreatedTimestamp;
-//}
-//
-//public class HistoricalLevelState
-//{
-//	public PlayerHistoricalState Player;
-//	public Vector2 SpawnPoint;
-//	public List<DryadHistoricalState> DryadList;
-//	public List<DryadFireHistoricalState> DryadFireList;
-//}
+
+public class PlayerHistoricalState
+{
+	public bool FacingLeft;
+	public int Health;
+	public float BleedPosition;
+	public Vector2 Position;
+	public Vector2 Velocity;
+	public bool Grounded;
+	public double LastAttackTimestamp;
+	public bool PendingAttackConnected;
+}
+
+public class DryadHistoricalState
+{
+	public bool FacingLeft;
+	public int Health;
+	public Vector2 Position;
+	public Vector2 Velocity;
+	public float CastProgressSecs;
+	public float CastCooldownSecs;
+	public DryadState AttackState;
+	public double LastStartCastTimestamp;
+	public bool InPlayerSwordRange;
+}
+
+public class DryadFireHistoricalState
+{
+	public Vector2 Position;
+	public double CreatedTimestamp;
+}
+
+public class HistoricalLevelState
+{
+	public PlayerHistoricalState Player;
+	public Vector2 SpawnPoint;
+	public List<DryadHistoricalState> DryadList = new List<DryadHistoricalState>();
+	public List<DryadFireHistoricalState> DryadFireList = new List<DryadFireHistoricalState>();
+}
 
 public class Level1 : Node
 {
@@ -50,11 +54,14 @@ public class Level1 : Node
 	const String LANTERN_TEXT_6 = "To use Retribution (scales), press R (Triangle or Xbox Y).";
 	const String LANTERN_TEXT_7 = "If your HP goes negative, quickly use the scales or hourglass to save yourself.";
 	
+	public const int HISTORY_MAX_RECORDS = 10;
+	public const int HISTORY_SAMPLES_PER_SECOND = 2;
+	
 	public const float LANTERN_DISTANCE = 30f;
 	public const float SPAWN_OFFSET_Y = -20f;
 	public bool ShownStory = false;
 	
-	//public Queue<HistoricalLevelState> LevelHistory;
+	public Queue<HistoricalLevelState> LevelHistory = new Queue<HistoricalLevelState>();
 	
 	public List<Vector2> DryadSpawnLocations = new List<Vector2>();
 	
@@ -90,6 +97,13 @@ public class Level1 : Node
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
 		playerCharNode.Position = spawnPoint.Position + new Vector2( 0, SPAWN_OFFSET_Y );
 		
+		CheckLanterns();
+	}
+	
+	public void CheckLanterns()
+	{
+		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
+		
 		var lantern = GetNode<AnimatedSprite>("Lantern");
 		var lantern2 = GetNode<AnimatedSprite>("Lantern2");
 		var lantern3 = GetNode<AnimatedSprite>("Lantern3");
@@ -98,20 +112,152 @@ public class Level1 : Node
 		var lantern6 = GetNode<AnimatedSprite>("Lantern6");
 		var lantern7 = GetNode<AnimatedSprite>("Lantern7");
 		
-		if (spawnPoint.Position.x <= lantern.Position.x)
-			lantern.Animation = "on";
-		if (spawnPoint.Position.x <= lantern2.Position.x)
-			lantern2.Animation = "on";
-		if (spawnPoint.Position.x <= lantern3.Position.x)
-			lantern3.Animation = "on";
-		if (spawnPoint.Position.x <= lantern4.Position.x)
-			lantern4.Animation = "on";
-		if (spawnPoint.Position.x <= lantern5.Position.x)
-			lantern5.Animation = "on";
-		if (spawnPoint.Position.x <= lantern6.Position.x)
-			lantern6.Animation = "on";
-		if (spawnPoint.Position.x <= lantern7.Position.x)
-			lantern7.Animation = "on";
+		lantern.Animation = (spawnPoint.Position.x <= lantern.Position.x) ? "on" : "off";
+		lantern2.Animation = (spawnPoint.Position.x <= lantern2.Position.x) ? "on" : "off";
+		lantern3.Animation = (spawnPoint.Position.x <= lantern3.Position.x) ? "on" : "off";
+		lantern4.Animation = (spawnPoint.Position.x <= lantern4.Position.x) ? "on" : "off";
+		lantern5.Animation = (spawnPoint.Position.x <= lantern5.Position.x) ? "on" : "off";
+		lantern6.Animation = (spawnPoint.Position.x <= lantern6.Position.x) ? "on" : "off";
+		lantern7.Animation = (spawnPoint.Position.x <= lantern7.Position.x) ? "on" : "off";
+	}
+	
+	public void HistoryTick()
+	{
+		var mainNode = GetParent<Main>();
+		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
+		var playerSprite = playerCharNode.GetNode<AnimatedSprite>("AnimatedSprite");
+		var dryadsNode = GetNode("Dryads");
+		var dryadFiresNode = GetNode("DryadFires");
+		
+		if (LevelHistory.Count >= HISTORY_MAX_RECORDS)
+			LevelHistory.Dequeue();		// Dequeue the oldest item in the queue
+			
+		var newHistory = new HistoricalLevelState();
+		
+		var playerHistory = new PlayerHistoricalState();
+		playerHistory.FacingLeft = playerSprite.FlipH;
+		playerHistory.Health = playerCharNode.Health;
+		playerHistory.BleedPosition = playerCharNode.BleedPosition;
+		playerHistory.Position = playerCharNode.Position;
+		playerHistory.Velocity = playerCharNode.Velocity;
+		playerHistory.Grounded = playerCharNode.Grounded;
+		playerHistory.LastAttackTimestamp = playerCharNode.LastAttackTimestamp;
+		playerHistory.PendingAttackConnected = playerCharNode.PendingAttackConnected;
+		newHistory.Player = playerHistory;
+
+		foreach (var c in dryadsNode.GetChildren())
+		{
+			Dryad dryad = c as Dryad;
+			if (dryad == null)
+				continue;
+				
+			var sprite = dryad.GetNode<AnimatedSprite>("AnimatedSprite");
+			
+			var dryadHistory = new DryadHistoricalState();
+			dryadHistory.FacingLeft = sprite.FlipH;
+			dryadHistory.Health = dryad.Health;
+			dryadHistory.Position = dryad.Position;
+			dryadHistory.AttackState = dryad.State;
+			dryadHistory.LastStartCastTimestamp = dryad.LastStartCastTimestamp;
+			dryadHistory.InPlayerSwordRange = dryad.InPlayerSwordRange;
+			newHistory.DryadList.Add(dryadHistory);
+		}
+
+		foreach (var c in dryadFiresNode.GetChildren())
+		{
+			DryadFire dryadFire = c as DryadFire;
+			if (dryadFire == null)
+				continue;
+				
+			var dryadFireHistory = new DryadFireHistoricalState();
+			dryadFireHistory.Position = dryadFire.Position;
+			dryadFireHistory.CreatedTimestamp = dryadFire.CreatedTimestamp;
+			newHistory.DryadFireList.Add(dryadFireHistory);
+		}
+
+		newHistory.SpawnPoint = mainNode.GetNode<Position2D>("StartPosition").Position;
+		LevelHistory.Enqueue(newHistory);
+		//mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("LanternSound").Play();
+	}
+	
+	public void ProcessHourglass()
+	{
+		if (LevelHistory.Count != HISTORY_MAX_RECORDS)
+			return;
+		
+		var mainNode = GetParent<Main>();
+		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
+		var playerSprite = playerCharNode.GetNode<AnimatedSprite>("AnimatedSprite");
+		var dryadsNode = GetNode("Dryads");
+		var dryadFiresNode = GetNode("DryadFires");
+		
+		var levelHistory = LevelHistory.Peek();
+		LevelHistory.Clear();
+		
+		foreach (var c in dryadsNode.GetChildren())
+		{
+			var dryad = c as Dryad;
+			if (dryad != null)
+			{
+				dryadsNode.RemoveChild(dryad);
+				dryad.QueueFree();
+			}
+		}
+
+		foreach (var c in dryadFiresNode.GetChildren())
+		{
+			var fire = c as DryadFire;
+			if (fire != null)
+			{
+				dryadFiresNode.RemoveChild(fire);
+				fire.QueueFree();
+			}
+		}
+		
+		var playerHistory = levelHistory.Player;
+		playerSprite.FlipH = playerHistory.FacingLeft;
+		playerCharNode.Health = playerHistory.Health;
+		playerCharNode.BleedPosition = playerHistory.BleedPosition;
+		playerCharNode.Position = playerHistory.Position;
+		playerCharNode.Velocity = playerHistory.Velocity;
+		playerCharNode.Grounded = playerHistory.Grounded;
+		playerCharNode.LastAttackTimestamp = playerHistory.LastAttackTimestamp;
+		playerCharNode.PendingAttackConnected = playerHistory.PendingAttackConnected;
+		playerCharNode.PendingHourglass = false;
+		playerCharNode.UsedHourglassTimestamp = 0;
+
+		foreach (var dryadHistory in levelHistory.DryadList)
+		{
+			Dryad newDryad = (Dryad) DryadScene.Instance();
+			var sprite = newDryad.GetNode<AnimatedSprite>("AnimatedSprite");
+			
+			sprite.FlipH = dryadHistory.FacingLeft;
+			newDryad.Health = dryadHistory.Health;
+			newDryad.Position = dryadHistory.Position;
+			newDryad.State = dryadHistory.AttackState;
+			newDryad.LastStartCastTimestamp = dryadHistory.LastStartCastTimestamp;
+			newDryad.InPlayerSwordRange = dryadHistory.InPlayerSwordRange;
+			newDryad.Target = playerCharNode;
+			
+			dryadsNode.AddChild(newDryad);
+		}
+
+		// --- below is not checked
+		foreach (var fireHistory in levelHistory.DryadFireList)
+		{
+			DryadFire newFire = (DryadFire) FireScene.Instance();
+			if (newFire == null)
+				continue;
+				
+			newFire.Position = fireHistory.Position;
+			newFire.CreatedTimestamp = fireHistory.CreatedTimestamp;
+			newFire.Target = playerCharNode;
+			
+			dryadFiresNode.AddChild(newFire);
+		}
+
+		mainNode.GetNode<Position2D>("StartPosition").Position = levelHistory.SpawnPoint;
+		CheckLanterns();
 	}
 	
 	public override void _Process(float delta)
@@ -127,7 +273,11 @@ public class Level1 : Node
 		// Reset player char if it goes below a certain Y coordinate
 		//var startPosition = GetNode<Position2D>("StartPosition");
 		if (playerCharNode.Position.y > PlayerChar.MIN_Y_COORD)
+		{
+//			var mainNode = GetParent<Main>();
+//			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("LanternSound").Play();
 			GetParent<Main>().ProcessPlayerDeath();
+		}
 		
 		// Check distance to lantern
 		var lantern = GetNode<AnimatedSprite>("Lantern");

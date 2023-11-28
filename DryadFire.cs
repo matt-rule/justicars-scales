@@ -25,7 +25,7 @@ public class DryadFire : Area2D
 			GetNode<AnimatedSprite>("AnimatedSprite");
 		sprite.Animation = "activate";
 		
-		Level1 levelNode = GetParent<Level1>();
+		Level1 levelNode = GetParent().GetParent<Level1>();
 		Main mainNode = levelNode.GetParent<Main>();
 		AudioStreamPlayer2D soundPlayer = mainNode
 			.GetNode<Node>("MediaNode")
