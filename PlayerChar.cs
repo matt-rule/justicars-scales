@@ -23,6 +23,13 @@ public class PlayerChar : KinematicBody2D
 	
 	public static float BLEED_SPEED = 40f;
 	
+	// How long it takes for the attack to connect with enemy
+	// (not for the timer to finish)
+	public const double ATTACK_DELAY = 0.12;
+	
+	// from start, not from attack connected with enemy
+	public const double ATTACK_ANIMATION_FINISHED = 0.5;
+	
 	[Export]
 	public int Health = MAX_HEALTH;
 	
@@ -35,11 +42,10 @@ public class PlayerChar : KinematicBody2D
 	[Export]
 	public Vector2 Velocity = new Vector2();
 	
-	[Export]
 	public bool Grounded = false;
-	
-	[Export]
-	public bool Attacking = false;
+	//public bool Attacking = false;
+	public double LastAttackTimestamp = 0;
+	public bool PendingAttackConnected = false;
 	
 	[Export]
 	public List<DryadFire> EffectsInRange = new List<DryadFire>();
@@ -67,6 +73,12 @@ public class PlayerChar : KinematicBody2D
 	// 5. How quickly the character slows down
 	public override void _PhysicsProcess(float delta)
 	{
+		if (PendingAttackConnected && LastAttackTimestamp + ATTACK_DELAY < Time.GetUnixTimeFromSystem())
+		{
+			PendingAttackConnected = false;
+			OnAttackProcess();
+		}
+		
 		var animatedSprite = GetNode<AnimatedSprite>("AnimatedSprite");
 
 		if (Velocity.Length() > 0)
@@ -77,14 +89,18 @@ public class PlayerChar : KinematicBody2D
 		if (Input.IsActionPressed("attack"))
 		{
 			animatedSprite.Animation = "attack";
-			if (!Attacking)
-				GetNode<Timer>("AttackDelay").Start();
-			Attacking = true;
+			if (LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < Time.GetUnixTimeFromSystem())
+			{
+				LastAttackTimestamp = Time.GetUnixTimeFromSystem();
+				PendingAttackConnected = true;
+			}
+				//GetNode<Timer>("AttackDelay").Start();
+			//Attacking = true;
 		}
 		
 		if (Input.IsActionJustPressed("use_hourglass"))
 		{
-			if (!Attacking)
+			if (LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < Time.GetUnixTimeFromSystem())
 			{
 				var main = GetParent().GetParent();
 				var hud = main.GetNode<HUD>("HUD");
@@ -109,7 +125,8 @@ public class PlayerChar : KinematicBody2D
 		
 		if (Input.IsActionJustPressed("use_scales"))
 		{
-			if (!Attacking)
+			//if (!Attacking)
+			if (LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < Time.GetUnixTimeFromSystem())
 			{
 				var main = GetParent().GetParent();
 				var hud = main.GetNode<HUD>("HUD");
@@ -157,7 +174,7 @@ public class PlayerChar : KinematicBody2D
 		}
 		
 //		var walk = MOVE_SPEED * (Input.GetAxis("move_left", "move_right"));
-		if ( Attacking )
+		if ( LastAttackTimestamp + ATTACK_ANIMATION_FINISHED > Time.GetUnixTimeFromSystem() )
 			Velocity.x = 0;
 		else
 		{
@@ -171,7 +188,8 @@ public class PlayerChar : KinematicBody2D
 
 		// Process vertical movement first to allow jumping,
 		// because horizontal movement sets Grounded := false.
-		if (Grounded && !Attacking)
+		bool attacking = LastAttackTimestamp + ATTACK_ANIMATION_FINISHED > Time.GetUnixTimeFromSystem();
+		if (Grounded && !attacking)
 		{
 			if (Input.IsActionPressed("move_up"))
 			{
@@ -245,7 +263,6 @@ public class PlayerChar : KinematicBody2D
 		if (animatedSprite.Animation == "attack")
 		{
 			animatedSprite.Animation = "standing";
-			Attacking = false;
 		}
 	}
 

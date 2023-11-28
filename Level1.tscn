@@ -583,13 +583,6 @@ position = Vector2( 1459, 153 )
 position = Vector2( 2731, 143 )
 z_index = 5
 
-[node name="MobTimer" type="Timer" parent="."]
-wait_time = 0.5
-
-[node name="StartTimer" type="Timer" parent="."]
-wait_time = 2.0
-one_shot = true
-
 [node name="MobPath" type="Path2D" parent="."]
 curve = SubResource( 28 )
 

@@ -153,7 +153,7 @@ animations = [ {
 
 [sub_resource type="CapsuleShape2D" id=27]
 radius = 6.0
-height = 36.0
+height = 34.0
 
 [node name="Nymph" type="KinematicBody2D"]
 script = ExtResource( 2 )
@@ -167,21 +167,8 @@ animation = "idle"
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2( -2, 0 )
+position = Vector2( -2, 1 )
 shape = SubResource( 27 )
-
-[node name="CooldownTimer" type="Timer" parent="."]
-process_mode = 0
-wait_time = 3.0
-one_shot = true
-__meta__ = {
-"_editor_description_": ""
-}
-
-[node name="FinishCastTimer" type="Timer" parent="."]
-process_mode = 0
-wait_time = 1.5
-one_shot = true
 
 [node name="HPRectBg" type="ColorRect" parent="."]
 margin_left = -19.0
@@ -199,4 +186,3 @@ margin_bottom = -26.0
 rect_pivot_offset = Vector2( 19, 1 )
 
 [connection signal="animation_finished" from="AnimatedSprite" to="." method="AiFinishAttackAnimation"]
-[connection signal="timeout" from="FinishCastTimer" to="." method="AiFinishCast"]

@@ -1,19 +1,31 @@
 using Godot;
 using System;
 
+public enum DryadState
+{
+	NotAttacking,
+	Casting,
+	FinishingCast
+}
+
 public class Dryad : KinematicBody2D
 {
 	public static int MOVE_SPEED = 100;
 	public static int MAX_RANGE = 120;
 	public static int MIN_RANGE = 80;
 	public static float AI_THINK_TIME = 0.8f;
-	public static float CAST_TIME = 1.0f;
+	//public static float CAST_TIME = 1.0f;
 	public static float POSITION_SPREAD = 70.0f;
 	public static float FIRE_POSITION_OFFSET = 25.0f;
 	public static float LOS = 240;
 	public static int NUM_FIRES = 3;
 	public static int HP_BAR_WIDTH = 38;
 	public static int MAX_HEALTH = 100;
+	public static double DRYAD_CAST_DURATION_SECS = 1.5;
+	public static double DRYAD_INNER_COOLDOWN_DURATION_SECS = 3;	// After cast
+	public static double DRYAD_FULL_COOLDOWN_DURATION_SECS =
+		DRYAD_CAST_DURATION_SECS + DRYAD_INNER_COOLDOWN_DURATION_SECS;	// Including cast
+	public static double DRYAD_FINISH_ATTACK_DURATION_SECS = 0.6;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -27,7 +39,14 @@ public class Dryad : KinematicBody2D
 	[Export]
 	public Timer AiThinkTimeTimer = null;
 	
-	public bool IsCasting = false;
+	[Export]
+	public DryadState State = DryadState.NotAttacking;
+	
+	// This can be used to determine whether the dryad is casting,
+	// when it will finish casting (1.5s duration),
+	// and when its cooldown (3s duration) finishes.
+	[Export]
+	public double LastStartCastTimestamp = 0.0;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -71,9 +90,9 @@ public class Dryad : KinematicBody2D
 			fireSprite.Animation = "simmer";
 			levelNode.AddChild(fireInstance);
 		}
-		Timer cooldownTimer = 
-			GetNode<Timer>("CooldownTimer");
-		cooldownTimer.Start();
+//		Timer cooldownTimer = 
+//			GetNode<Timer>("CooldownTimer");
+//		cooldownTimer.Start();
 	}
 	
 	public void AiFinishAttackAnimation()
@@ -84,13 +103,12 @@ public class Dryad : KinematicBody2D
 		if (sprite.Animation == "attack")
 		{
 			sprite.Animation = "idle";
-			IsCasting = false;
 		}
 	}
 	
 	public void AiMove()
 	{
-		if (IsCasting)
+		if (LastStartCastTimestamp + DRYAD_CAST_DURATION_SECS + DRYAD_FINISH_ATTACK_DURATION_SECS > Time.GetUnixTimeFromSystem() )
 			return;
 		
 		float direction = AiGetDirection();
@@ -120,16 +138,23 @@ public class Dryad : KinematicBody2D
 		{
 			sprite.FlipH = direction < 0;
 			
-			Timer cooldownTimer = 
-				GetNode<Timer>("CooldownTimer");
-			if (cooldownTimer.IsStopped())
+//			Timer cooldownTimer = 
+//				GetNode<Timer>("CooldownTimer");
+//			if (cooldownTimer.IsStopped())
+			if (LastStartCastTimestamp + DRYAD_FULL_COOLDOWN_DURATION_SECS < Time.GetUnixTimeFromSystem() )
 			{
-				IsCasting = true;
+				LastStartCastTimestamp = Time.GetUnixTimeFromSystem();
+				State = DryadState.Casting;
+				//IsCasting = true;
 				sprite.Animation = "casting";
 				
-				Timer finishCastTimer =
-					GetNode<Timer>("FinishCastTimer");
-				finishCastTimer.Start();
+//				Timer finishCastTimer =
+//					GetNode<Timer>("FinishCastTimer");
+//				finishCastTimer.Start();
+			}
+			else if (State == DryadState.FinishingCast)
+			{
+				sprite.Animation = "attack";
 			}
 			else
 				sprite.Animation = "idle";
@@ -138,6 +163,19 @@ public class Dryad : KinematicBody2D
 
 	public override void _PhysicsProcess(float delta)
 	{
+		if ( State == DryadState.Casting && LastStartCastTimestamp + DRYAD_CAST_DURATION_SECS < Time.GetUnixTimeFromSystem() )
+		{
+			State = DryadState.FinishingCast;
+			AiFinishCast();
+			return;
+		}
+		if ( State == DryadState.FinishingCast && LastStartCastTimestamp + DRYAD_CAST_DURATION_SECS + DRYAD_FINISH_ATTACK_DURATION_SECS < Time.GetUnixTimeFromSystem() )
+		{
+			State = DryadState.NotAttacking;
+			AiFinishAttackAnimation();
+			return;
+		}
+		
 		AiMove();
 	}
 	

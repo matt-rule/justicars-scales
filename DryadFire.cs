@@ -9,10 +9,14 @@ public class DryadFire : Area2D
 	[Export]
 	public int Health = 100;
 	
+	public bool Boomed = false;
+	
+	public double CreatedTimestamp = 0;
+	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		
+		CreatedTimestamp = Time.GetUnixTimeFromSystem();
 	}
 
 	public void OnFireBoom()
@@ -63,7 +67,15 @@ public class DryadFire : Area2D
 			if (Target.EffectsInRange.Contains(this))
 				Target.EffectsInRange.Remove(this);
 	}
-
+	
+	public override void _PhysicsProcess(float delta)
+	{
+		if (!Boomed && CreatedTimestamp + 1 < Time.GetUnixTimeFromSystem() )
+		{
+			Boomed = true;
+			OnFireBoom();	
+		}
+	}
 //  // Called every frame. 'delta' is the elapsed time since the previous frame.
 //  public override void _Process(float delta)
 //  {

@@ -129,8 +129,6 @@ public class Level1 : Node
 //		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
 //		PlayerCharNode.Start(spawnPoint.Position);
 
-		GetNode<Timer>("StartTimer").Start();
-
 		// TODO
 		//GetNode<AudioStreamPlayer>("Music").Play();
 	}
@@ -168,7 +166,7 @@ public class Level1 : Node
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 	
 		// Reset player char if it goes below a certain Y coordinate
-		var startPosition = GetNode<Position2D>("StartPosition");
+		//var startPosition = GetNode<Position2D>("StartPosition");
 		if (playerCharNode.Position.y > PlayerChar.MIN_Y_COORD)
 			GetParent<Main>().ProcessPlayerDeath();
 		
