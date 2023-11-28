@@ -3,11 +3,15 @@ using System;
 
 public class DryadFire : Area2D
 {
+	public const int FIREBALL_DAMAGE = 80;
+	
 	[Export]
 	public PlayerChar Target = null;
 	
 	[Export]
 	public int Health = 100;
+	
+	public uint DamageId = 0;	// Identifies Dryad
 	
 	public bool Boomed = false;
 	
@@ -32,10 +36,18 @@ public class DryadFire : Area2D
 			.GetNode<AudioStreamPlayer2D>("FireSound");
 		if (Target.EffectsInRange.Contains(this))
 		{
-			Target.Health -= 80;
+			var prevTargetHealth = Target.Health;
+			Target.Health -= FIREBALL_DAMAGE;
 			if (Target.Health < -100)
 				Target.Health = -100;
+		
+			var damageReport = new DamageReport();
+			damageReport.Who = DamageId;
+			damageReport.Amount = prevTargetHealth - Target.Health;
+			damageReport.Timestamp = Time.GetUnixTimeFromSystem();
+			levelNode.DamageHistory.Enqueue(damageReport);
 		}
+		
 		soundPlayer.Position = Target.Position;
 		soundPlayer.Play();
 	}

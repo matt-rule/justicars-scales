@@ -31,6 +31,7 @@ public class PlayerChar : KinematicBody2D
 	public const double ATTACK_ANIMATION_FINISHED = 0.5;
 	
 	public const double HOURGLASS_DELAY = 0.4;
+	public const double SCALES_DELAY = 0.4;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -49,6 +50,8 @@ public class PlayerChar : KinematicBody2D
 	public bool PendingAttackConnected = false;
 	public bool PendingHourglass = false;
 	public double UsedHourglassTimestamp = 0;
+	public bool PendingScales = false;
+	public double UsedScalesTimestamp = 0;
 	
 	[Export]
 	public List<DryadFire> EffectsInRange = new List<DryadFire>();
@@ -104,7 +107,7 @@ public class PlayerChar : KinematicBody2D
 		
 		if (Input.IsActionJustPressed("use_hourglass"))
 		{
-			if (!PendingHourglass
+			if (!PendingScales && !PendingHourglass
 				&& levelNode.LevelHistory.Count == Level1.HISTORY_MAX_RECORDS
 				&& LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < now)
 			{
@@ -115,26 +118,12 @@ public class PlayerChar : KinematicBody2D
 		
 		if (Input.IsActionJustPressed("use_scales"))
 		{
-			if (LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < now)
+			if (!PendingScales && !PendingHourglass
+				&& UsedScalesTimestamp == 0
+				&& LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < now)
 			{
-				var main = GetParent().GetParent();
-				var hud = main.GetNode<HUD>("HUD");
-				var media = main.GetNode("MediaNode");
-
-				var overlay = hud.GetNode<AnimatedSprite>("ItemOverlay");
-				overlay.Animation = "scales";
-				overlay.Modulate = new Color(1, 1, 1, 0);
-				overlay.Show();
-
-				var tween = GetTree().CreateTween();
-				tween.TweenProperty(overlay, "modulate",
-					new Color(1, 1, 1, 0.8f), 0.4f);
-				tween.TweenInterval( 2 );
-				tween.TweenProperty(overlay, "modulate",
-					new Color(1, 1, 1, 0), 1.2f);
-					
-				var scalesSound = media.GetNode<AudioStreamPlayer>("ScalesSound");
-				scalesSound.Play();
+				PendingScales = true;
+				UsedScalesTimestamp = now;
 			}
 		}
 
@@ -164,6 +153,34 @@ public class PlayerChar : KinematicBody2D
 				
 			var hourglassSound = media.GetNode<AudioStreamPlayer>("HourglassSound");
 			hourglassSound.Play();
+		}
+
+		if (PendingScales
+			&& UsedScalesTimestamp + SCALES_DELAY < now)
+		{
+			PendingScales = false;
+			
+			var main = GetParent().GetParent();
+			var hud = main.GetNode<HUD>("HUD");
+			var media = main.GetNode("MediaNode");
+			
+			var level = main.GetNode<Level1>("Level1");
+			level.ProcessScales();
+
+			var overlay = hud.GetNode<AnimatedSprite>("ItemOverlay");
+			overlay.Animation = "scales";
+			overlay.Modulate = new Color(1, 1, 1, 0);
+			overlay.Show();
+
+			var tween = GetTree().CreateTween();
+			tween.TweenProperty(overlay, "modulate",
+				new Color(1, 1, 1, 0.8f), 0.4f);
+			tween.TweenInterval( 2 );
+			tween.TweenProperty(overlay, "modulate",
+				new Color(1, 1, 1, 0), 1.2f);
+				
+			var scalesSound = media.GetNode<AudioStreamPlayer>("ScalesSound");
+			scalesSound.Play();
 		}
 
 		if (Velocity.x != 0)
@@ -261,11 +278,9 @@ public class PlayerChar : KinematicBody2D
 		}
 		
 		if (Health < BleedPosition)
-		{
 			BleedPosition -= BLEED_SPEED * delta;
-			if (BleedPosition < Health)
-				BleedPosition = Health;
-		}
+		if (BleedPosition < Health)
+			BleedPosition = Health;
 		
 		if ( BleedPosition <= 0 && BleedPosition <= Health )
 		{

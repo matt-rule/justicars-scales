@@ -12,6 +12,8 @@ public class PlayerHistoricalState
 	public bool Grounded;
 	public double LastAttackTimestamp;
 	public bool PendingAttackConnected;
+	public bool PendingScales;
+	public double UsedScalesTimestamp;
 }
 
 public class DryadHistoricalState
@@ -25,6 +27,7 @@ public class DryadHistoricalState
 	public DryadState AttackState;
 	public double LastStartCastTimestamp;
 	public bool InPlayerSwordRange;
+	public uint DamageId;
 }
 
 public class DryadFireHistoricalState
@@ -39,6 +42,14 @@ public class HistoricalLevelState
 	public Vector2 SpawnPoint;
 	public List<DryadHistoricalState> DryadList = new List<DryadHistoricalState>();
 	public List<DryadFireHistoricalState> DryadFireList = new List<DryadFireHistoricalState>();
+	public Queue<DamageReport> DamageHistory;		// The history, but at this point in history
+}
+
+public class DamageReport
+{
+	public uint Who;		// Damage ID
+	public int Amount;
+	public double Timestamp;
 }
 
 public class Level1 : Node
@@ -57,10 +68,15 @@ public class Level1 : Node
 	public const int HISTORY_MAX_RECORDS = 10;
 	public const int HISTORY_SAMPLES_PER_SECOND = 2;
 	
+	public const int DAMAGE_REPORT_LIFESPAN_SECS = 5;
+	
 	public const float LANTERN_DISTANCE = 30f;
 	public const float SPAWN_OFFSET_Y = -20f;
 	public bool ShownStory = false;
 	
+	public const int MAX_HEALTH = 100;
+	
+	public Queue<DamageReport> DamageHistory = new Queue<DamageReport>();
 	public Queue<HistoricalLevelState> LevelHistory = new Queue<HistoricalLevelState>();
 	
 	public List<Vector2> DryadSpawnLocations = new List<Vector2>();
@@ -90,6 +106,7 @@ public class Level1 : Node
 			Dryad dryad = (Dryad)DryadScene.Instance();
 			dryad.Target = PlayerCharNode;
 			dryad.Position = location;
+			dryad.DamageId = GD.Randi();
 			dryadsNode.AddChild(dryad);
 		}
 		
@@ -143,6 +160,8 @@ public class Level1 : Node
 		playerHistory.Grounded = playerCharNode.Grounded;
 		playerHistory.LastAttackTimestamp = playerCharNode.LastAttackTimestamp;
 		playerHistory.PendingAttackConnected = playerCharNode.PendingAttackConnected;
+		playerHistory.PendingScales = playerCharNode.PendingScales;
+		playerHistory.UsedScalesTimestamp = playerCharNode.UsedScalesTimestamp;
 		newHistory.Player = playerHistory;
 
 		foreach (var c in dryadsNode.GetChildren())
@@ -160,6 +179,7 @@ public class Level1 : Node
 			dryadHistory.AttackState = dryad.State;
 			dryadHistory.LastStartCastTimestamp = dryad.LastStartCastTimestamp;
 			dryadHistory.InPlayerSwordRange = dryad.InPlayerSwordRange;
+			dryadHistory.DamageId = dryad.DamageId;
 			newHistory.DryadList.Add(dryadHistory);
 		}
 
@@ -176,8 +196,16 @@ public class Level1 : Node
 		}
 
 		newHistory.SpawnPoint = mainNode.GetNode<Position2D>("StartPosition").Position;
+		newHistory.DamageHistory = new Queue<DamageReport>();
+		foreach (var damageReport in DamageHistory)
+		{
+			var newDamageReport = new DamageReport();
+			newDamageReport.Who = damageReport.Who;
+			newDamageReport.Amount = damageReport.Amount;
+			newDamageReport.Timestamp = damageReport.Timestamp;
+			newHistory.DamageHistory.Enqueue(newDamageReport);
+		}
 		LevelHistory.Enqueue(newHistory);
-		//mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("LanternSound").Play();
 	}
 	
 	public void ProcessHourglass()
@@ -223,6 +251,8 @@ public class Level1 : Node
 		playerCharNode.Grounded = playerHistory.Grounded;
 		playerCharNode.LastAttackTimestamp = playerHistory.LastAttackTimestamp;
 		playerCharNode.PendingAttackConnected = playerHistory.PendingAttackConnected;
+		playerCharNode.PendingScales = playerHistory.PendingScales;
+		playerCharNode.UsedScalesTimestamp = playerHistory.UsedScalesTimestamp;
 		playerCharNode.PendingHourglass = false;
 		playerCharNode.UsedHourglassTimestamp = 0;
 
@@ -238,6 +268,7 @@ public class Level1 : Node
 			newDryad.LastStartCastTimestamp = dryadHistory.LastStartCastTimestamp;
 			newDryad.InPlayerSwordRange = dryadHistory.InPlayerSwordRange;
 			newDryad.Target = playerCharNode;
+			newDryad.DamageId = dryadHistory.DamageId;
 			
 			dryadsNode.AddChild(newDryad);
 		}
@@ -258,8 +289,77 @@ public class Level1 : Node
 
 		mainNode.GetNode<Position2D>("StartPosition").Position = levelHistory.SpawnPoint;
 		CheckLanterns();
+		
+		DamageHistory.Clear();
+		foreach (var damageReport in levelHistory.DamageHistory)
+		{
+			var newDamageReport = new DamageReport();
+			newDamageReport.Who = damageReport.Who;
+			newDamageReport.Amount = damageReport.Amount;
+			newDamageReport.Timestamp = damageReport.Timestamp;
+			DamageHistory.Enqueue(newDamageReport);
+		}
 	}
 	
+	public void ProcessScales()
+	{
+		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
+		var dryadsNode = GetNode("Dryads");
+		
+		// assume expired ones have been pruned every timestep
+		foreach (var damageReport in DamageHistory)
+		{
+			foreach (var d in dryadsNode.GetChildren())
+			{
+				var dryad = d as Dryad;
+				if (d == null)
+					continue;
+				
+				if (dryad.DamageId == damageReport.Who)
+				{
+					int halfAmount = damageReport.Amount / 2;
+					
+					dryad.Health -= halfAmount;
+					playerCharNode.Health += halfAmount;
+					if (playerCharNode.Health > MAX_HEALTH)
+						playerCharNode.Health = MAX_HEALTH;
+					
+					var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+					hitSound.Play();
+					if (dryad.Health <= 0)
+					{
+						var deathSound = GetParent().GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
+						deathSound.Position = dryad.Position;
+						deathSound.Play();
+						dryad.QueueFree();
+					}
+					else
+					{
+						var onHitSound = GetParent().GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
+						onHitSound.Position = dryad.Position;
+						onHitSound.Play();
+					}
+				}
+			}
+		}
+	}
+
+	public override void _PhysicsProcess(float delta)
+	{
+		bool checkedQueue = false;
+		while (DamageHistory.Count != 0 && !checkedQueue)
+		{
+			var report = DamageHistory.Peek();
+			if (report.Timestamp + DAMAGE_REPORT_LIFESPAN_SECS < Time.GetUnixTimeFromSystem())
+				DamageHistory.Dequeue();
+			else
+				checkedQueue = true;
+		}
+	}
+	
+	// TODO: Consider moving a lot of this code to _PhysicsProcess
 	public override void _Process(float delta)
 	{
 		if (Input.IsActionJustPressed("show_menu"))

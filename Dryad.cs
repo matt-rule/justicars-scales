@@ -33,6 +33,8 @@ public class Dryad : KinematicBody2D
 	[Export]
 	public PlayerChar Target = null;
 	
+	public uint DamageId = 0;
+	
 	[Export]
 	public bool InPlayerSwordRange = false;
 	
@@ -68,6 +70,7 @@ public class Dryad : KinematicBody2D
 			// create fire
 			DryadFire fireInstance = (DryadFire) levelNode.FireScene.Instance();
 			fireInstance.Target = Target;
+			fireInstance.DamageId = DamageId;
 			
 			float randomPosition = (float)GD.RandRange(-POSITION_SPREAD, POSITION_SPREAD);
 			fireInstance.Position = new Vector2(Target.Position.x + randomPosition, Target.Position.y + FIRE_POSITION_OFFSET);
