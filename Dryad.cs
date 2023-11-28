@@ -37,9 +37,6 @@ public class Dryad : KinematicBody2D
 	public bool InPlayerSwordRange = false;
 	
 	[Export]
-	public Timer AiThinkTimeTimer = null;
-	
-	[Export]
 	public DryadState State = DryadState.NotAttacking;
 	
 	// This can be used to determine whether the dryad is casting,
@@ -51,17 +48,6 @@ public class Dryad : KinematicBody2D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-//		AiThinkTimeTimer = Timer.new()
-//		AiThinkTimeTimer.SetOneShot(true)
-//		AiThinkTimeTimer.SetWaitTime(AI_THINK_TIME)
-//		AiThinkTimeTimer.connect("timeout", self, "AiDecision")
-//		add_child(ai_think_time_timer)
-	}
-	
-	public void AiDecision()
-	{
-//		if is_in_range && state == 0 && target.get_state() == 0:
-//			attack()
 	}
 
 	public float AiGetDirection()
@@ -90,9 +76,6 @@ public class Dryad : KinematicBody2D
 			fireSprite.Animation = "simmer";
 			levelNode.AddChild(fireInstance);
 		}
-//		Timer cooldownTimer = 
-//			GetNode<Timer>("CooldownTimer");
-//		cooldownTimer.Start();
 	}
 	
 	public void AiFinishAttackAnimation()
@@ -138,19 +121,11 @@ public class Dryad : KinematicBody2D
 		{
 			sprite.FlipH = direction < 0;
 			
-//			Timer cooldownTimer = 
-//				GetNode<Timer>("CooldownTimer");
-//			if (cooldownTimer.IsStopped())
 			if (LastStartCastTimestamp + DRYAD_FULL_COOLDOWN_DURATION_SECS < Time.GetUnixTimeFromSystem() )
 			{
 				LastStartCastTimestamp = Time.GetUnixTimeFromSystem();
 				State = DryadState.Casting;
-				//IsCasting = true;
 				sprite.Animation = "casting";
-				
-//				Timer finishCastTimer =
-//					GetNode<Timer>("FinishCastTimer");
-//				finishCastTimer.Start();
 			}
 			else if (State == DryadState.FinishingCast)
 			{

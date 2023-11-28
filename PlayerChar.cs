@@ -94,8 +94,6 @@ public class PlayerChar : KinematicBody2D
 				LastAttackTimestamp = Time.GetUnixTimeFromSystem();
 				PendingAttackConnected = true;
 			}
-				//GetNode<Timer>("AttackDelay").Start();
-			//Attacking = true;
 		}
 		
 		if (Input.IsActionJustPressed("use_hourglass"))
@@ -125,7 +123,6 @@ public class PlayerChar : KinematicBody2D
 		
 		if (Input.IsActionJustPressed("use_scales"))
 		{
-			//if (!Attacking)
 			if (LastAttackTimestamp + ATTACK_ANIMATION_FINISHED < Time.GetUnixTimeFromSystem())
 			{
 				var main = GetParent().GetParent();
@@ -173,7 +170,6 @@ public class PlayerChar : KinematicBody2D
 				animatedSprite.Animation = "standing";
 		}
 		
-//		var walk = MOVE_SPEED * (Input.GetAxis("move_left", "move_right"));
 		if ( LastAttackTimestamp + ATTACK_ANIMATION_FINISHED > Time.GetUnixTimeFromSystem() )
 			Velocity.x = 0;
 		else
@@ -221,7 +217,7 @@ public class PlayerChar : KinematicBody2D
 
 		// Up vector required for IsOnFloor
 		Velocity = MoveAndSlide(Velocity, Vector2.Up);
-// Note there is also MoveAndSlideWithSnap
+		// Note there is also MoveAndSlideWithSnap
 		
 		if (IsOnFloor())
 		{
@@ -273,9 +269,6 @@ public class PlayerChar : KinematicBody2D
 		{
 			dryad.InPlayerSwordRange = true;
 		}
-		
-//		var swordCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
-//		swordCollisionShape.Disabled = true;
 	}
 
 	private void OnSwordCollisionBodyExited(object body)
@@ -310,9 +303,6 @@ public class PlayerChar : KinematicBody2D
 				onHitSound.Play();
 			}
 		}
-		//if (dyrad.GetNode<CollisionShape2D>("CollisionShape2D");
-		// test intersection between sword collision shape and enemy collision shape
-		// if intersect, enemy is damaged
 	}
 
 	private void OnAttackProcess()

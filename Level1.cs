@@ -113,53 +113,6 @@ public class Level1 : Node
 		if (spawnPoint.Position.x <= lantern7.Position.x)
 			lantern7.Animation = "on";
 	}
-
-
-//	public void GameOver()
-//	{
-//		GetNode<Timer>("MobTimer").Stop();
-//
-//		GetParent().GetNode<HUD>("HUD").ShowGameOver();
-//
-//		GetParent().GetNode<AudioStreamPlayer>("Music").Stop();
-//		//GetNode<AudioStreamPlayer>("DeathSound").Play();
-//	}
-
-//	public void NewGame()
-//	{
-//		// Note that for calling Godot-provided methods with strings,
-//		// we have to use the original Godot snake_case name.
-//		GetTree().CallGroup("mobs", "queue_free");
-//
-//		//var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
-////		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
-////		PlayerCharNode.Start(spawnPoint.Position);
-//
-//		// TODO
-//		//GetNode<AudioStreamPlayer>("Music").Play();
-//	}
-
-//	public void OnStartTimerTimeout()
-//	{
-//		GetNode<Timer>("MobTimer").Start();
-//	}
-
-//	public void OnMobTimerTimeout()
-//	{
-//	}
-	
-//	public void Start(Vector2 pos)
-//	{
-//		// TODO: Undo these changes when game ends
-//		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
-//		//playerCharNode._IntegrateForces();
-//
-//		var spawnPoint = GetParent().GetNode<Position2D>("StartPosiion");
-//		playerCharNode.Position = spawnPoint.Position;
-//		playerCharNode.Show();
-//		playerCharNode.GetNode<CollisionShape2D>("CollisionShape2D").Disabled = false;
-//		//playerCharNode.Sleeping = false;
-//	}
 	
 	public override void _Process(float delta)
 	{

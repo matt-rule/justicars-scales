@@ -1,4 +1,4 @@
-[gd_scene load_steps=68 format=2]
+[gd_scene load_steps=67 format=2]
 
 [ext_resource path="res://Level1.cs" type="Script" id=1]
 [ext_resource path="res://Dryad.tscn" type="PackedScene" id=2]
@@ -36,11 +36,6 @@
 [ext_resource path="res://assets/holly-48-1.png" type="Texture" id=35]
 [ext_resource path="res://assets/reeds-16-3.png" type="Texture" id=36]
 [ext_resource path="res://DryadFire.tscn" type="PackedScene" id=37]
-
-[sub_resource type="Curve2D" id=28]
-_data = {
-"points": PoolVector2Array( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 480, 0, 0, 0, 0, 0, 480, 720, 0, 0, 0, 0, 0, 720, 0, 0, 0, 0, 0, 0 )
-}
 
 [sub_resource type="AtlasTexture" id=31]
 atlas = ExtResource( 9 )
@@ -577,11 +572,6 @@ texture = ExtResource( 28 )
 [node name="PlayerChar" parent="." instance=ExtResource( 3 )]
 position = Vector2( 2731, 143 )
 z_index = 5
-
-[node name="MobPath" type="Path2D" parent="."]
-curve = SubResource( 28 )
-
-[node name="MobSpawnLocation" type="PathFollow2D" parent="MobPath"]
 
 [node name="Lantern" type="AnimatedSprite" parent="."]
 position = Vector2( 2727, 160 )
