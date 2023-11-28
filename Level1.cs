@@ -48,6 +48,7 @@ public class HistoricalLevelState
 public class DamageReport
 {
 	public uint Who;		// Damage ID
+	public bool FromPlayer;
 	public int Amount;
 	public double Timestamp;
 }
@@ -75,6 +76,7 @@ public class Level1 : Node
 	public bool ShownStory = false;
 	
 	public const int MAX_HEALTH = 100;
+	public const int DRYAD_MAX_HEALTH = 100;
 	
 	public Queue<DamageReport> DamageHistory = new Queue<DamageReport>();
 	public Queue<HistoricalLevelState> LevelHistory = new Queue<HistoricalLevelState>();
@@ -201,6 +203,7 @@ public class Level1 : Node
 		{
 			var newDamageReport = new DamageReport();
 			newDamageReport.Who = damageReport.Who;
+			newDamageReport.FromPlayer = damageReport.FromPlayer;
 			newDamageReport.Amount = damageReport.Amount;
 			newDamageReport.Timestamp = damageReport.Timestamp;
 			newHistory.DamageHistory.Enqueue(newDamageReport);
@@ -295,6 +298,7 @@ public class Level1 : Node
 		{
 			var newDamageReport = new DamageReport();
 			newDamageReport.Who = damageReport.Who;
+			newDamageReport.FromPlayer = damageReport.FromPlayer;
 			newDamageReport.Amount = damageReport.Amount;
 			newDamageReport.Timestamp = damageReport.Timestamp;
 			DamageHistory.Enqueue(newDamageReport);
@@ -319,27 +323,42 @@ public class Level1 : Node
 				{
 					int halfAmount = damageReport.Amount / 2;
 					
-					dryad.Health -= halfAmount;
-					playerCharNode.Health += halfAmount;
-					if (playerCharNode.Health > MAX_HEALTH)
-						playerCharNode.Health = MAX_HEALTH;
-					
-					var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
-					hitSound.Play();
-					if (dryad.Health <= 0)
+					if (damageReport.FromPlayer)
 					{
-						var deathSound = GetParent().GetNode("MediaNode")
-							.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
-						deathSound.Position = dryad.Position;
-						deathSound.Play();
-						dryad.QueueFree();
+						playerCharNode.Health -= halfAmount;
+						dryad.Health += halfAmount;
+						if (dryad.Health > DRYAD_MAX_HEALTH)
+							dryad.Health = DRYAD_MAX_HEALTH;
+						
+						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Play();
+						if (playerCharNode.Health < -100)
+							playerCharNode.Health = -100;
 					}
 					else
 					{
-						var onHitSound = GetParent().GetNode("MediaNode")
-							.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
-						onHitSound.Position = dryad.Position;
-						onHitSound.Play();
+						dryad.Health -= halfAmount;
+						playerCharNode.Health += halfAmount;
+						if (playerCharNode.Health > MAX_HEALTH)
+							playerCharNode.Health = MAX_HEALTH;
+						
+						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Play();
+						if (dryad.Health <= 0)
+						{
+							var deathSound = GetParent().GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
+							deathSound.Position = dryad.Position;
+							deathSound.Play();
+							dryad.QueueFree();
+						}
+						else
+						{
+							var onHitSound = GetParent().GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
+							onHitSound.Position = dryad.Position;
+							onHitSound.Play();
+						}
 					}
 				}
 			}

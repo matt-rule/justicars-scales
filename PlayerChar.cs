@@ -33,6 +33,8 @@ public class PlayerChar : KinematicBody2D
 	public const double HOURGLASS_DELAY = 0.4;
 	public const double SCALES_DELAY = 0.4;
 	
+	public const int SWORD_DAMAGE = 10;
+	
 	[Export]
 	public int Health = MAX_HEALTH;
 	
@@ -318,14 +320,18 @@ public class PlayerChar : KinematicBody2D
 
 	private void ProcessAttack(Dryad dryad)
 	{
+		var levelNode = GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
 		if (dryad.InPlayerSwordRange)
 		{
 			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
 			hitSound.Play();
-			dryad.Health -= 10;
+			int prevTargetHealth = dryad.Health;
+			dryad.Health -= SWORD_DAMAGE;
 			if (dryad.Health <= 0)
 			{
-				var deathSound = GetParent().GetParent().GetNode("MediaNode")
+				var deathSound = mainNode.GetNode("MediaNode")
 					.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
 				deathSound.Position = dryad.Position;
 				deathSound.Play();
@@ -333,11 +339,18 @@ public class PlayerChar : KinematicBody2D
 			}
 			else
 			{
-				var onHitSound = GetParent().GetParent().GetNode("MediaNode")
+				var onHitSound = mainNode.GetNode("MediaNode")
 					.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
 				onHitSound.Position = dryad.Position;
 				onHitSound.Play();
 			}
+			
+			var damageReport = new DamageReport();
+			damageReport.Who = dryad.DamageId;
+			damageReport.FromPlayer = true;
+			damageReport.Amount = prevTargetHealth - dryad.Health;
+			damageReport.Timestamp = Time.GetUnixTimeFromSystem();
+			levelNode.DamageHistory.Enqueue(damageReport);
 		}
 	}
 

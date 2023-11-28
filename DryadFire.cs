@@ -43,6 +43,7 @@ public class DryadFire : Area2D
 		
 			var damageReport = new DamageReport();
 			damageReport.Who = DamageId;
+			damageReport.FromPlayer = false;
 			damageReport.Amount = prevTargetHealth - Target.Health;
 			damageReport.Timestamp = Time.GetUnixTimeFromSystem();
 			levelNode.DamageHistory.Enqueue(damageReport);
