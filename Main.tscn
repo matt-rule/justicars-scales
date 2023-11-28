@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://Level1.tscn" type="PackedScene" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://assets/sfx/478809__ianstargem__scifi-hit-thing-2.wav" type="AudioStream" id=11]
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice3.wav" type="AudioStream" id=12]
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice.wav" type="AudioStream" id=13]
+[ext_resource path="res://assets/sfx/436421__glen_hoban__singingbowl_84.wav" type="AudioStream" id=14]
 [ext_resource path="res://assets/441497__matrixxx__retro-explosion-05.wav" type="AudioStream" id=42]
 [ext_resource path="res://assets/524689__klankbeeld__forest-summer-roond-007-200619_0186.mp3" type="AudioStream" id=43]
 
@@ -102,6 +103,9 @@ margin_right = 323.0
 margin_bottom = -43.0
 color = Color( 0, 0, 0, 1 )
 
+[node name="StartPosition" type="Position2D" parent="."]
+position = Vector2( 2727, 160 )
+
 [node name="MediaNode" type="Node" parent="."]
 
 [node name="Music" type="AudioStreamPlayer" parent="MediaNode"]
@@ -138,6 +142,11 @@ autoplay = true
 pause_mode = 2
 stream = ExtResource( 10 )
 volume_db = -12.242
+
+[node name="LanternSound" type="AudioStreamPlayer" parent="MediaNode"]
+pause_mode = 2
+stream = ExtResource( 14 )
+volume_db = -32.302
 
 [node name="HourglassSound" type="AudioStreamPlayer" parent="MediaNode"]
 pause_mode = 2

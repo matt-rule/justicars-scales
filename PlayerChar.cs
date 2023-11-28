@@ -15,11 +15,19 @@ public class PlayerChar : KinematicBody2D
 	public static int JUMP_FORCE = 350;
 	public static int GRAVITY = 900;
 	public static int MIN_Y_COORD = 240;
-	public static int HP_BAR_WIDTH = 38;
+	public static int HP_BAR_WIDTH = 85;
+	public static int HP_BAR_HEIGHT = 8;
+	public static int BLEED_BAR_POS_X = 85;
+	public static int BLEED_BAR_POS_Y = 0;
 	public static int MAX_HEALTH = 100;
+	
+	public static float BLEED_SPEED = 40f;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
+	
+	[Export]
+	public float BleedPosition = MAX_HEALTH;
 	
 	[Export]
 	public InputState InputState = InputState.None;
@@ -217,6 +225,18 @@ public class PlayerChar : KinematicBody2D
 				}
 			}
 		}
+		
+		if (Health < BleedPosition)
+		{
+			BleedPosition -= BLEED_SPEED * delta;
+			if (BleedPosition < Health)
+				BleedPosition = Health;
+		}
+		
+		if ( BleedPosition <= 0 && BleedPosition <= Health )
+		{
+			GetParent().GetParent<Main>().ProcessPlayerDeath();
+		}
 	}
 
 	private void PlayerCharAnimationFinished()
@@ -295,7 +315,20 @@ public class PlayerChar : KinematicBody2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(float delta)
 	{
-		var rect = GetNode<ColorRect>("HPRectRemaining");
-		rect.RectSize = new Vector2((float)Health / MAX_HEALTH * HP_BAR_WIDTH, 2);
+		var main = GetParent().GetParent();
+		var hpBar = main.GetNode("HUD").GetNode("HPBar");
+		var hpRect = hpBar.GetNode<ColorRect>("HPRectRemaining");
+		hpRect.RectSize = new Vector2(Math.Max( 0, (float)Health / MAX_HEALTH * HP_BAR_WIDTH ), HP_BAR_HEIGHT);
+		var bleedRect = hpBar.GetNode<ColorRect>("HPRectBleeding");
+		float bleedBarXOffset = 0;
+		
+		if (Health <= -100f)
+		{
+			bleedBarXOffset = -100f / MAX_HEALTH * HP_BAR_WIDTH;	
+		}	
+		else if (Health < 0)
+			bleedBarXOffset = (float)Health / MAX_HEALTH * HP_BAR_WIDTH;
+		bleedRect.RectPosition = new Vector2(BLEED_BAR_POS_X + bleedBarXOffset, BLEED_BAR_POS_Y);
+		bleedRect.RectSize = new Vector2((float)BleedPosition / MAX_HEALTH * HP_BAR_WIDTH - bleedBarXOffset, HP_BAR_HEIGHT);
 	}
 }

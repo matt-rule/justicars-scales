@@ -29,8 +29,8 @@ public class DryadFire : Area2D
 		if (Target.EffectsInRange.Contains(this))
 		{
 			Target.Health -= 80;
-			if (Target.Health <= 0)
-				mainNode.ProcessPlayerDeath();
+			if (Target.Health < -100)
+				Target.Health = -100;
 		}
 		soundPlayer.Position = Target.Position;
 		soundPlayer.Play();

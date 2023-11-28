@@ -590,9 +590,6 @@ wait_time = 0.5
 wait_time = 2.0
 one_shot = true
 
-[node name="StartPosition" type="Position2D" parent="."]
-position = Vector2( 1512, 126 )
-
 [node name="MobPath" type="Path2D" parent="."]
 curve = SubResource( 28 )
 
@@ -617,19 +614,25 @@ animation = "off"
 playing = true
 
 [node name="Lantern4" type="AnimatedSprite" parent="."]
-position = Vector2( 2156, 160 )
+position = Vector2( 2256, 160 )
 frames = SubResource( 29 )
 animation = "off"
 playing = true
 
 [node name="Lantern5" type="AnimatedSprite" parent="."]
-position = Vector2( 1952, 160 )
+position = Vector2( 2143, 160 )
 frames = SubResource( 29 )
 animation = "off"
 playing = true
 
 [node name="Lantern6" type="AnimatedSprite" parent="."]
-position = Vector2( 1754, 160 )
+position = Vector2( 2005, 160 )
+frames = SubResource( 29 )
+animation = "off"
+playing = true
+
+[node name="Lantern7" type="AnimatedSprite" parent="."]
+position = Vector2( 1854, 160 )
 frames = SubResource( 29 )
 animation = "off"
 playing = true

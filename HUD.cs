@@ -132,9 +132,11 @@ public class HUD : CanvasLayer
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
 					GetNode<TextureRect>("MainMenuLogo").Show();
-					GetNode<Label>("MainMenuLabel").Show();
+					GetNode<Label>("MainMenuLabel1").Show();
+					GetNode<Label>("MainMenuLabel2").Show();
 					GetNode<Panel>("MainMenuPanel").Show();
 					GetNode<Panel>("RestartDialogPanel").Hide();
+					GetNode<Node2D>("HPBar").Hide();
 					GetTree().Paused = false;
 				}
 				break;

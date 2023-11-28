@@ -42,9 +42,11 @@ public class Main : Node
 		ScreenSize = Level.GetNode<PlayerChar>("PlayerChar").GetViewportRect().Size;
 		
 		hud.GetNode<TextureRect>("MainMenuLogo").Hide();
-		hud.GetNode<Label>("MainMenuLabel").Hide();
+		hud.GetNode<Label>("MainMenuLabel1").Hide();
+		hud.GetNode<Label>("MainMenuLabel2").Hide();
 		hud.GetNode<Panel>("MainMenuPanel").Hide();
 		hud.GetNode<ColorRect>("DeathScreen").Hide();
+		hud.GetNode<Node2D>("HPBar").Show();
 		//media.GetNode<AudioStreamPlayer>("Music").Play();
 		var ambient = media.GetNode<AudioStreamPlayer>("Ambient");
 		if (!ambient.Playing)
