@@ -318,15 +318,16 @@ public class PlayerChar : KinematicBody2D
 	private void OnAttackProcess()
 	{
 		var swordCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
-		var dryadNode = GetParent().GetNodeOrNull<Dryad>("Dryad");
-		var dryadNode2 = GetParent().GetNodeOrNull<Dryad>("Dryad2");
-		
 		var swingSound = GetNode<AudioStreamPlayer2D>("SwingSound");
 		swingSound.Play();
-		if (dryadNode != null)
-			ProcessAttack(dryadNode);
-		if (dryadNode2 != null)
-			ProcessAttack(dryadNode2);
+		
+		foreach (var node in GetParent().GetNode("Dryads").GetChildren())
+		{
+			var dryad = node as Dryad;
+			if (dryad == null)
+				continue;
+			ProcessAttack(dryad);
+		}
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.

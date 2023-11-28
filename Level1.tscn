@@ -1,4 +1,4 @@
-[gd_scene load_steps=69 format=2]
+[gd_scene load_steps=68 format=2]
 
 [ext_resource path="res://Level1.cs" type="Script" id=1]
 [ext_resource path="res://Dryad.tscn" type="PackedScene" id=2]
@@ -36,7 +36,6 @@
 [ext_resource path="res://assets/holly-48-1.png" type="Texture" id=35]
 [ext_resource path="res://assets/reeds-16-3.png" type="Texture" id=36]
 [ext_resource path="res://DryadFire.tscn" type="PackedScene" id=37]
-[ext_resource path="res://Mob.tscn" type="PackedScene" id=38]
 
 [sub_resource type="Curve2D" id=28]
 _data = {
@@ -448,8 +447,8 @@ points = PoolVector2Array( 0, 0, 16, 0, 16, 16, 0, 16 )
 
 [node name="Level1" type="Node2D"]
 script = ExtResource( 1 )
+DryadScene = ExtResource( 2 )
 FireScene = ExtResource( 37 )
-mobScene = ExtResource( 38 )
 
 [node name="ImmediateBg" type="Node2D" parent="."]
 z_index = -10
@@ -573,11 +572,7 @@ margin_right = 188.0
 margin_bottom = 177.0
 texture = ExtResource( 28 )
 
-[node name="Dryad" parent="." instance=ExtResource( 2 )]
-position = Vector2( 1393, 153 )
-
-[node name="Dryad2" parent="." instance=ExtResource( 2 )]
-position = Vector2( 1459, 153 )
+[node name="Dryads" type="Node" parent="."]
 
 [node name="PlayerChar" parent="." instance=ExtResource( 3 )]
 position = Vector2( 2731, 143 )

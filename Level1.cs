@@ -1,63 +1,44 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-
-public class LanternHistoricalState
-{
-	AnimatedSprite Entity;
-	bool Activated;
-}
-
-public class PlayerHistoricalState
-{
-	PlayerChar Entity;
-	bool FacingLeft;
-	int Health;
-	int BleedPosition;
-	Vector2 Position;
-	Vector2 Velocity;
-}
-
-public class DryadHistoricalState
-{
-	Dryad Entity;
-	bool FacingLeft;
-	int Health;
-	Vector2 Position;
-	Vector2 Velocity;
-	float CastProgressSecs;
-	float CastCooldownSecs;
-}
-
-public class DryadFireHistoricalState
-{
-	DryadFire Entity;
-	int CreatedTimestamp;
-}
+//
+//public class PlayerHistoricalState
+//{
+//	PlayerChar Entity;
+//	bool FacingLeft;
+//	int Health;
+//	int BleedPosition;
+//	Vector2 Position;
+//	Vector2 Velocity;
+//}
+//
+//public class DryadHistoricalState
+//{
+//	Dryad Entity;
+//	bool FacingLeft;
+//	int Health;
+//	Vector2 Position;
+//	Vector2 Velocity;
+//	float CastProgressSecs;
+//	float CastCooldownSecs;
+//}
+//
+//public class DryadFireHistoricalState
+//{
+//	DryadFire Entity;
+//	int CreatedTimestamp;
+//}
+//
+//public class HistoricalLevelState
+//{
+//	public PlayerHistoricalState Player;
+//	public Vector2 SpawnPoint;
+//	public List<DryadHistoricalState> DryadList;
+//	public List<DryadFireHistoricalState> DryadFireList;
+//}
 
 public class Level1 : Node
 {
-	public const float LANTERN_DISTANCE = 30f;
-	
-	public const float SPAWN_OFFSET_Y = -20f;
-
-	public bool ShownStory = false;
-	
-	// Up to 10 in each queue (5 seconds, 2 per second)
-	public Queue<PlayerHistoricalState> PlayerHistoricalState;
-	public List<Queue<DryadHistoricalState>> DryadHistoricalStates;
-	public List<Queue<DryadFireHistoricalState>> DryadFireHistoricalStates;
-	public List<Queue<LanternHistoricalState>> LanternHistoricalStates;
-	
-#pragma warning disable 649
-	// We assign this in the editor, so we don't need the warning about not being assigned.
-	[Export]
-	public PackedScene mobScene;
-	
-	[Export]
-	public PackedScene FireScene { get; set; }
-#pragma warning restore 649
-
 	const String STORY_TEXT_1 = "\"Pagans!\" the head priest was yelling hysterically at me.  \"Drive them from these lands!\"";
 	const String STORY_TEXT_2 = "But so far I have yet to see a single human.  Instead, my mission has led me deeper into the forest.  I am no longer sure of my way.";
 	
@@ -69,16 +50,41 @@ public class Level1 : Node
 	const String LANTERN_TEXT_6 = "To use Retribution (scales), press R (Triangle or Xbox Y).";
 	const String LANTERN_TEXT_7 = "If your HP goes negative, quickly use the scales or hourglass to save yourself.";
 	
+	public const float LANTERN_DISTANCE = 30f;
+	public const float SPAWN_OFFSET_Y = -20f;
+	public bool ShownStory = false;
+	
+	//public Queue<HistoricalLevelState> LevelHistory;
+	
+	public List<Vector2> DryadSpawnLocations = new List<Vector2>();
+	
+// We assign this in the editor, so we don't need the warning about not being assigned.
+#pragma warning disable 649
+	[Export]
+	public PackedScene DryadScene { get; set; }
+	
+	[Export]
+	public PackedScene FireScene { get; set; }
+#pragma warning restore 649
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+		DryadSpawnLocations.Add(new Vector2(1393, 153));
+		DryadSpawnLocations.Add(new Vector2(1459, 153));
+		DryadSpawnLocations.Add(new Vector2(1593, 153));
+		DryadSpawnLocations.Add(new Vector2(1659, 153));
+		var dryadsNode = GetNodeOrNull("Dryads");
+
 		var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
-		var DryadNode = GetNodeOrNull<Dryad>("Dryad");
-		if (DryadNode != null)
-			DryadNode.Target = PlayerCharNode;
-		var DryadNode2 = GetNodeOrNull<Dryad>("Dryad2");
-		if (DryadNode2 != null)
-			DryadNode2.Target = PlayerCharNode;
+		
+		foreach (Vector2 location in DryadSpawnLocations)
+		{
+			Dryad dryad = (Dryad)DryadScene.Instance();
+			dryad.Target = PlayerCharNode;
+			dryad.Position = location;
+			dryadsNode.AddChild(dryad);
+		}
 		
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
@@ -119,28 +125,28 @@ public class Level1 : Node
 //		//GetNode<AudioStreamPlayer>("DeathSound").Play();
 //	}
 
-	public void NewGame()
-	{
-		// Note that for calling Godot-provided methods with strings,
-		// we have to use the original Godot snake_case name.
-		GetTree().CallGroup("mobs", "queue_free");
+//	public void NewGame()
+//	{
+//		// Note that for calling Godot-provided methods with strings,
+//		// we have to use the original Godot snake_case name.
+//		GetTree().CallGroup("mobs", "queue_free");
+//
+//		//var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
+////		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
+////		PlayerCharNode.Start(spawnPoint.Position);
+//
+//		// TODO
+//		//GetNode<AudioStreamPlayer>("Music").Play();
+//	}
 
-		//var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
-//		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
-//		PlayerCharNode.Start(spawnPoint.Position);
+//	public void OnStartTimerTimeout()
+//	{
+//		GetNode<Timer>("MobTimer").Start();
+//	}
 
-		// TODO
-		//GetNode<AudioStreamPlayer>("Music").Play();
-	}
-
-	public void OnStartTimerTimeout()
-	{
-		GetNode<Timer>("MobTimer").Start();
-	}
-
-	public void OnMobTimerTimeout()
-	{
-	}
+//	public void OnMobTimerTimeout()
+//	{
+//	}
 	
 //	public void Start(Vector2 pos)
 //	{

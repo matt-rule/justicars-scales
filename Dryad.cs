@@ -71,7 +71,7 @@ public class Dryad : KinematicBody2D
 	
 	public void AiFinishCast()
 	{
-		Level1 levelNode = GetParent<Level1>();
+		Level1 levelNode = GetParent().GetParent<Level1>();
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
@@ -79,7 +79,7 @@ public class Dryad : KinematicBody2D
 		for (int i = 0; i < NUM_FIRES; ++i)
 		{
 			// create fire
-			DryadFire fireInstance = (DryadFire) GetParent<Level1>().FireScene.Instance();
+			DryadFire fireInstance = (DryadFire) levelNode.FireScene.Instance();
 			fireInstance.Target = Target;
 			
 			float randomPosition = (float)GD.RandRange(-POSITION_SPREAD, POSITION_SPREAD);
