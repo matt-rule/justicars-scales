@@ -13,19 +13,18 @@ public class Dryad : KinematicBody2D
 	public static int MOVE_SPEED = 100;
 	public static int MAX_RANGE = 120;
 	public static int MIN_RANGE = 80;
-	public static float AI_THINK_TIME = 0.8f;
-	//public static float CAST_TIME = 1.0f;
 	public static float POSITION_SPREAD = 70.0f;
 	public static float FIRE_POSITION_OFFSET = 25.0f;
 	public static float LOS = 240;
 	public static int NUM_FIRES = 3;
-	public static int HP_BAR_WIDTH = 38;
+	public static int HP_BAR_WIDTH = 12;
 	public static int MAX_HEALTH = 100;
 	public static double DRYAD_CAST_DURATION_SECS = 1.5;
 	public static double DRYAD_INNER_COOLDOWN_DURATION_SECS = 3;	// After cast
 	public static double DRYAD_FULL_COOLDOWN_DURATION_SECS =
 		DRYAD_CAST_DURATION_SECS + DRYAD_INNER_COOLDOWN_DURATION_SECS;	// Including cast
 	public static double DRYAD_FINISH_ATTACK_DURATION_SECS = 0.6;
+	public static double HIDE_HP_BAR_SECS = 4;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -37,6 +36,8 @@ public class Dryad : KinematicBody2D
 	
 	[Export]
 	public bool InPlayerSwordRange = false;
+	
+	public double LastAffectedTimestamp = 0;
 	
 	[Export]
 	public DryadState State = DryadState.NotAttacking;
@@ -161,7 +162,11 @@ public class Dryad : KinematicBody2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(float delta)
 	{
-		var rect = GetNode<ColorRect>("HPRectRemaining");
-		rect.RectSize = new Vector2((float)Health / MAX_HEALTH * HP_BAR_WIDTH, 2);
+		bool visible = LastAffectedTimestamp + HIDE_HP_BAR_SECS > Time.GetUnixTimeFromSystem();
+		var rectRemaining = GetNode<ColorRect>("HPRectRemaining");
+		var rectBg = GetNode<ColorRect>("HPRectBg");
+		rectRemaining.RectSize = new Vector2((float)Health / MAX_HEALTH * HP_BAR_WIDTH, 2);
+		rectRemaining.Visible = visible;
+		rectBg.Visible = visible;
 	}
 }

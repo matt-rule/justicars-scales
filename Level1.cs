@@ -309,6 +309,7 @@ public class Level1 : Node
 	{
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var dryadsNode = GetNode("Dryads");
+		var now = Time.GetUnixTimeFromSystem();
 		
 		// assume expired ones have been pruned every timestep
 		foreach (var damageReport in DamageHistory)
@@ -323,6 +324,7 @@ public class Level1 : Node
 				{
 					int halfAmount = damageReport.Amount / 2;
 					
+					dryad.LastAffectedTimestamp = now;
 					if (damageReport.FromPlayer)
 					{
 						playerCharNode.Health -= halfAmount;

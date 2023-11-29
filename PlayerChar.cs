@@ -320,6 +320,7 @@ public class PlayerChar : KinematicBody2D
 
 	private void ProcessAttack(Dryad dryad)
 	{
+		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
 		
@@ -329,6 +330,7 @@ public class PlayerChar : KinematicBody2D
 			hitSound.Play();
 			int prevTargetHealth = dryad.Health;
 			dryad.Health -= SWORD_DAMAGE;
+			dryad.LastAffectedTimestamp = now;
 			if (dryad.Health <= 0)
 			{
 				var deathSound = mainNode.GetNode("MediaNode")
@@ -349,7 +351,7 @@ public class PlayerChar : KinematicBody2D
 			damageReport.Who = dryad.DamageId;
 			damageReport.FromPlayer = true;
 			damageReport.Amount = prevTargetHealth - dryad.Health;
-			damageReport.Timestamp = Time.GetUnixTimeFromSystem();
+			damageReport.Timestamp = now;
 			levelNode.DamageHistory.Enqueue(damageReport);
 		}
 	}

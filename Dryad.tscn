@@ -172,17 +172,17 @@ position = Vector2( -2, 1 )
 shape = SubResource( 27 )
 
 [node name="HPRectBg" type="ColorRect" parent="."]
-margin_left = -19.0
+margin_left = -6.0
 margin_top = -28.0
-margin_right = 19.0
+margin_right = 6.0
 margin_bottom = -26.0
 rect_pivot_offset = Vector2( 19, 1 )
 color = Color( 0.380392, 0, 0, 1 )
 
 [node name="HPRectRemaining" type="ColorRect" parent="."]
-margin_left = -19.0
+margin_left = -6.0
 margin_top = -28.0
-margin_right = 19.0
+margin_right = 6.0
 margin_bottom = -26.0
 rect_pivot_offset = Vector2( 19, 1 )
 

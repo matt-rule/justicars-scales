@@ -137,6 +137,13 @@ public class HUD : CanvasLayer
 					GetNode<Panel>("MainMenuPanel").Show();
 					GetNode<Panel>("RestartDialogPanel").Hide();
 					GetNode<Node2D>("HPBar").Hide();
+					GetNode<TextureRect>("HourglassIcon").Hide();
+					GetNode<TextureRect>("ScalesIcon").Hide();
+					GetNode<AnimatedSprite>("ItemOverlay").Hide();
+					GetNode<Panel>("MiniInfoPanel").Hide();
+					GetNode<Panel>("InfoPanel").Hide();
+					GetNode<Panel>("PauseMenuPanel").Hide();
+					GetNode<ColorRect>("DeathScreen").Hide();
 					GetTree().Paused = false;
 				}
 				break;
