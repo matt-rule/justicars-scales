@@ -15,16 +15,16 @@ public class Dryad : KinematicBody2D
 	public static int MIN_RANGE = 80;
 	public static float POSITION_SPREAD = 70.0f;
 	public static float FIRE_POSITION_OFFSET = 25.0f;
-	public static float LOS = 240;
+	public static float LOS = 140;
 	public static int NUM_FIRES = 3;
 	public static int HP_BAR_WIDTH = 12;
+	public static double HIDE_HP_BAR_SECS = 4;
 	public static int MAX_HEALTH = 100;
 	public static double DRYAD_CAST_DURATION_SECS = 1.5;
 	public static double DRYAD_INNER_COOLDOWN_DURATION_SECS = 3;	// After cast
 	public static double DRYAD_FULL_COOLDOWN_DURATION_SECS =
 		DRYAD_CAST_DURATION_SECS + DRYAD_INNER_COOLDOWN_DURATION_SECS;	// Including cast
 	public static double DRYAD_FINISH_ATTACK_DURATION_SECS = 0.6;
-	public static double HIDE_HP_BAR_SECS = 4;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -159,7 +159,6 @@ public class Dryad : KinematicBody2D
 		AiMove();
 	}
 	
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(float delta)
 	{
 		bool visible = LastAffectedTimestamp + HIDE_HP_BAR_SECS > Time.GetUnixTimeFromSystem();

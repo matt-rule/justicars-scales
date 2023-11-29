@@ -9,7 +9,7 @@
 [ext_resource path="res://assets/parallax-1-bushes.png" type="Texture" id=7]
 [ext_resource path="res://assets/sfx/262260__gowlermusic__horror-sounds3.wav" type="AudioStream" id=8]
 [ext_resource path="res://assets/sfx/467604__triqystudio__openbag.wav" type="AudioStream" id=9]
-[ext_resource path="res://assets/sfx/492236__soundflakes__tyrael-spellbreaking.wav" type="AudioStream" id=10]
+[ext_resource path="res://assets/sfx/492223_492244_270270.wav" type="AudioStream" id=10]
 [ext_resource path="res://assets/sfx/478809__ianstargem__scifi-hit-thing-2.wav" type="AudioStream" id=11]
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice3.wav" type="AudioStream" id=12]
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice.wav" type="AudioStream" id=13]
@@ -118,7 +118,7 @@ stream = ExtResource( 8 )
 
 [node name="FireSound" type="AudioStreamPlayer2D" parent="MediaNode"]
 stream = ExtResource( 42 )
-volume_db = -8.412
+volume_db = -12.412
 
 [node name="LandingSound" type="AudioStreamPlayer2D" parent="MediaNode"]
 stream = ExtResource( 9 )
@@ -141,7 +141,7 @@ autoplay = true
 [node name="ScalesSound" type="AudioStreamPlayer" parent="MediaNode"]
 pause_mode = 2
 stream = ExtResource( 10 )
-volume_db = -12.242
+volume_db = -9.766
 
 [node name="LanternSound" type="AudioStreamPlayer" parent="MediaNode"]
 pause_mode = 2
@@ -154,6 +154,7 @@ stream = ExtResource( 11 )
 volume_db = -12.242
 
 [node name="DeathTimer" type="Timer" parent="."]
+process_mode = 0
 wait_time = 4.0
 one_shot = true
 

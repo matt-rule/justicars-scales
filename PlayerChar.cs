@@ -33,7 +33,8 @@ public class PlayerChar : KinematicBody2D
 	public const double HOURGLASS_DELAY = 0.4;
 	public const double SCALES_DELAY = 0.4;
 	
-	public const int SWORD_DAMAGE = 10;
+	public const int SWORD_DAMAGE_DRYAD = 10;
+	public const int SWORD_DAMAGE_DEMON = 2;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -189,19 +190,6 @@ public class PlayerChar : KinematicBody2D
 		{
 			animatedSprite.Animation = "running";
 			// See the note below about boolean assignment.
-			
-			var swordCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
-			if (Velocity.x < 0)
-			{
-				animatedSprite.FlipH = true;
-				swordCollisionShape.Position = new Vector2 (-15, -3);
-			}
-			else
-			{
-				animatedSprite.FlipH = false;
-				swordCollisionShape.Position = new Vector2 (15, -3);
-			}
-			animatedSprite.FlipV = false;
 		}
 		else
 		{
@@ -216,6 +204,19 @@ public class PlayerChar : KinematicBody2D
 			var directionX = Input.GetActionStrength("move_right")
 				- Input.GetActionStrength("move_left");
 			Velocity.x = directionX * MOVE_SPEED;
+			
+			var swordCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
+			if (Velocity.x < 0)
+			{
+				animatedSprite.FlipH = true;
+				swordCollisionShape.Position = new Vector2 (-15, -3);
+			}
+			else if (Velocity.x > 0)
+			{
+				animatedSprite.FlipH = false;
+				swordCollisionShape.Position = new Vector2 (15, -3);
+			}
+			animatedSprite.FlipV = false;
 		}
 
 		// For horizontal collisions, turn OFF "Selected Collision On"
@@ -304,18 +305,20 @@ public class PlayerChar : KinematicBody2D
 	{
 		var dryad = body as Dryad;
 		if (dryad != null)
-		{
 			dryad.InPlayerSwordRange = true;
-		}
+		var demon = body as LargeDemon;
+		if (demon != null)
+			demon.InPlayerSwordRange = true;
 	}
 
 	private void OnSwordCollisionBodyExited(object body)
 	{
 		var dryad = body as Dryad;
 		if (dryad != null)
-		{
 			dryad.InPlayerSwordRange = false;
-		}
+		var demon = body as LargeDemon;
+		if (demon != null)
+			demon.InPlayerSwordRange = false;
 	}
 
 	private void ProcessAttack(Dryad dryad)
@@ -329,7 +332,7 @@ public class PlayerChar : KinematicBody2D
 			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
 			hitSound.Play();
 			int prevTargetHealth = dryad.Health;
-			dryad.Health -= SWORD_DAMAGE;
+			dryad.Health -= SWORD_DAMAGE_DRYAD;
 			dryad.LastAffectedTimestamp = now;
 			if (dryad.Health <= 0)
 			{
@@ -355,6 +358,33 @@ public class PlayerChar : KinematicBody2D
 			levelNode.DamageHistory.Enqueue(damageReport);
 		}
 	}
+	
+	private void ProcessAttack(LargeDemon demon)
+	{
+		var now = Time.GetUnixTimeFromSystem();
+		var levelNode = GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
+		if (demon.InPlayerSwordRange)
+		{
+			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
+			hitSound.Play();
+			int prevTargetHealth = demon.Health;
+			demon.Health -= SWORD_DAMAGE_DEMON;
+			demon.LastAffectedTimestamp = now;
+			if (demon.Health <= 0)
+			{
+				demon.QueueFree();
+			}
+			
+			var damageReport = new DamageReport();
+			damageReport.Who = demon.DamageId;
+			damageReport.FromPlayer = true;
+			damageReport.Amount = prevTargetHealth - demon.Health;
+			damageReport.Timestamp = now;
+			levelNode.DamageHistory.Enqueue(damageReport);
+		}
+	}
 
 	private void OnAttackProcess()
 	{
@@ -368,6 +398,13 @@ public class PlayerChar : KinematicBody2D
 			if (dryad == null)
 				continue;
 			ProcessAttack(dryad);
+		}
+		foreach (var node in GetParent().GetNode("Demons").GetChildren())
+		{
+			var demon = node as LargeDemon;
+			if (demon == null)
+				continue;
+			ProcessAttack(demon);
 		}
 	}
 

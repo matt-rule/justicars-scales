@@ -1,4 +1,4 @@
-[gd_scene load_steps=67 format=2]
+[gd_scene load_steps=68 format=2]
 
 [ext_resource path="res://Level1.cs" type="Script" id=1]
 [ext_resource path="res://Dryad.tscn" type="PackedScene" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://assets/demon-small2-32x48.png" type="Texture" id=5]
 [ext_resource path="res://assets/tree-2.png" type="Texture" id=6]
 [ext_resource path="res://assets/imp-32x32.png" type="Texture" id=7]
+[ext_resource path="res://LargeDemon.tscn" type="PackedScene" id=8]
 [ext_resource path="res://assets/lantern3.png" type="Texture" id=9]
 [ext_resource path="res://assets/clover-16-1.png" type="Texture" id=10]
 [ext_resource path="res://assets/tree-3.png" type="Texture" id=11]
@@ -444,6 +445,7 @@ points = PoolVector2Array( 0, 0, 16, 0, 16, 16, 0, 16 )
 script = ExtResource( 1 )
 DryadScene = ExtResource( 2 )
 FireScene = ExtResource( 37 )
+DemonScene = ExtResource( 8 )
 
 [node name="ImmediateBg" type="Node2D" parent="."]
 z_index = -10
@@ -570,6 +572,12 @@ texture = ExtResource( 28 )
 [node name="Dryads" type="Node" parent="."]
 
 [node name="DryadFires" type="Node" parent="."]
+
+[node name="Demons" type="Node" parent="."]
+
+[node name="LargeDemon" parent="Demons" instance=ExtResource( 8 )]
+position = Vector2( 151, 134 )
+DamageId = 155
 
 [node name="PlayerChar" parent="." instance=ExtResource( 3 )]
 position = Vector2( 2731, 143 )
