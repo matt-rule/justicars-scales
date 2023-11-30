@@ -44,7 +44,7 @@ use_mipmaps = true
 font_data = ExtResource( 6 )
 
 [sub_resource type="DynamicFont" id=5]
-size = 12
+size = 11
 font_data = ExtResource( 3 )
 
 [sub_resource type="DynamicFont" id=6]
@@ -349,24 +349,61 @@ margin_bottom = 59.0
 [node name="HBoxContainer" type="HBoxContainer" parent="RestartDialogPanel/VBoxContainer"]
 margin_top = 63.0
 margin_right = 168.0
-margin_bottom = 84.0
+margin_bottom = 81.0
 alignment = 1
 
 [node name="YesButton" type="Button" parent="RestartDialogPanel/VBoxContainer/HBoxContainer"]
-margin_left = 52.0
-margin_right = 85.0
-margin_bottom = 21.0
+margin_left = 54.0
+margin_right = 84.0
+margin_bottom = 18.0
 rect_pivot_offset = Vector2( 102, 21 )
 custom_fonts/font = SubResource( 3 )
 text = "Yes"
 
 [node name="NoButton" type="Button" parent="RestartDialogPanel/VBoxContainer/HBoxContainer"]
-margin_left = 89.0
-margin_right = 116.0
-margin_bottom = 21.0
+margin_left = 88.0
+margin_right = 113.0
+margin_bottom = 18.0
 rect_pivot_offset = Vector2( 102, 21 )
 custom_fonts/font = SubResource( 3 )
 text = "No"
+
+[node name="CreditsPanel" type="Panel" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -150.0
+margin_top = -84.5
+margin_right = 150.0
+margin_bottom = 84.5
+rect_pivot_offset = Vector2( 225, 73 )
+custom_styles/panel = SubResource( 4 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CreditsPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CreditsText" type="Label" parent="CreditsPanel/VBoxContainer"]
+margin_right = 300.0
+margin_bottom = 150.0
+custom_fonts/font = SubResource( 5 )
+text = "Credits
+
+Design & dev: Matthew Rule (Canoparia Games)
+
+Sound Effects (freesound.org): BloodPixelHero, dermotte, Glen_Hoban, GowlerMusic, IanStarGem, Jagadamba, JoelAudio, julius_galla, klankbeeld, MATRIXXX_, maxmakessounds, MisterSegev, Motion_S, Nox_Sound, SoundFlakes, spookymodem, TriqyStudio"
+align = 1
+autowrap = true
+
+[node name="CloseButton" type="Button" parent="CreditsPanel/VBoxContainer"]
+margin_top = 154.0
+margin_right = 300.0
+margin_bottom = 172.0
+rect_pivot_offset = Vector2( 102, 21 )
+custom_fonts/font = SubResource( 3 )
+text = "Close"
 
 [node name="DeathScreen" type="ColorRect" parent="."]
 visible = false
@@ -397,3 +434,4 @@ align = 1
 [connection signal="pressed" from="MainMenuPanel/VBoxContainer/CreditsButton" to="." method="OnCreditsButtonPressed"]
 [connection signal="pressed" from="RestartDialogPanel/VBoxContainer/HBoxContainer/YesButton" to="." method="YesButtonPressed"]
 [connection signal="pressed" from="RestartDialogPanel/VBoxContainer/HBoxContainer/NoButton" to="." method="NoButtonPressed"]
+[connection signal="pressed" from="CreditsPanel/VBoxContainer/CloseButton" to="." method="CloseCreditsButtonPressed"]

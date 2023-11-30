@@ -61,7 +61,7 @@ animations = [ {
 "frames": [ SubResource( 5 ), SubResource( 6 ), SubResource( 7 ) ],
 "loop": true,
 "name": "death",
-"speed": 5.0
+"speed": 15.0
 }, {
 "frames": [ SubResource( 8 ) ],
 "loop": true,
@@ -89,6 +89,7 @@ shape = SubResource( 1 )
 frames = SubResource( 13 )
 animation = "idle"
 playing = true
+flip_h = true
 
 [node name="HPRectBg" type="ColorRect" parent="."]
 margin_left = -6.0

@@ -14,10 +14,12 @@ public class LargeDemon : KinematicBody2D
 	public static double ATTACK_RESET_ANIMATION = 0.6;
 	public static double ATTACK_COOLDOWN_SECS = 5; // From beginning of attack
 	public static int DAMAGE_ONTO_PLAYER = 140;
+	public static double DEATH_DURATION_SECS = 0.6;
 	
 	public bool InPlayerSwordRange = false;
 	public double LastAffectedTimestamp = 0;
 	public double LastAttackTimestamp = 0;
+	public double DeathTimestamp = 0;
 	public bool AttackPending = false;
 	public bool PlayerInSwipeRange = false;
 	public bool Alive = true;
@@ -103,10 +105,27 @@ public class LargeDemon : KinematicBody2D
 	
 	public override void _PhysicsProcess(float delta)
 	{
+		var now = Time.GetUnixTimeFromSystem();
+		
+		if (DeathTimestamp != 0)
+		{
+			if (DeathTimestamp + DEATH_DURATION_SECS < now)
+			{
+				QueueFree();
+			}
+			else
+			{
+				AnimatedSprite sprite = 
+					GetNode<AnimatedSprite>("AnimatedSprite");
+				sprite.Animation = "isdamaged";
+			}
+			return;
+		}
+		
 		AiMove();
 		
 		if (AttackPending
-			&& LastAttackTimestamp + ATTACK_DELAY < Time.GetUnixTimeFromSystem() )
+			&& LastAttackTimestamp + ATTACK_DELAY < now )
 		{
 			AttackPending = false;
 			ProcessAttack();

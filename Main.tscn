@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=2]
+[gd_scene load_steps=24 format=2]
 
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://Level1.tscn" type="PackedScene" id=2]
@@ -17,6 +17,10 @@
 [ext_resource path="res://assets/sfx/253682__julius_galla__monster-step-foreleg-12.wav" type="AudioStream" id=15]
 [ext_resource path="res://assets/sfx/207745__mistersegev__deep-monster-roar_3.wav" type="AudioStream" id=16]
 [ext_resource path="res://assets/sfx/207745__mistersegev__deep-monster-roar_2.wav" type="AudioStream" id=17]
+[ext_resource path="res://assets/sfx/202100__spookymodem__goblin-scream.wav" type="AudioStream" id=18]
+[ext_resource path="res://assets/sfx/249813__spookymodem__goblin-death.wav" type="AudioStream" id=19]
+[ext_resource path="res://assets/sfx/263011__dermotte__sword_02.wav" type="AudioStream" id=20]
+[ext_resource path="res://assets/sfx/77611__joelaudio__sfx_attack_sword_001.wav" type="AudioStream" id=21]
 [ext_resource path="res://assets/441497__matrixxx__retro-explosion-05.wav" type="AudioStream" id=42]
 [ext_resource path="res://assets/524689__klankbeeld__forest-summer-roond-007-200619_0186.mp3" type="AudioStream" id=43]
 
@@ -107,7 +111,7 @@ margin_bottom = -43.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="StartPosition" type="Position2D" parent="."]
-position = Vector2( 2727, 160 )
+position = Vector2( -200, 100 )
 
 [node name="MediaNode" type="Node" parent="."]
 
@@ -147,6 +151,14 @@ volume_db = -16.647
 stream = ExtResource( 13 )
 volume_db = -0.552
 
+[node name="GoblinAttackedSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 19 )
+volume_db = -11.695
+
+[node name="GoblinDeathSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 18 )
+volume_db = -10.457
+
 [node name="Ambient" type="AudioStreamPlayer" parent="MediaNode"]
 pause_mode = 2
 stream = ExtResource( 43 )
@@ -167,6 +179,14 @@ volume_db = -32.302
 pause_mode = 2
 stream = ExtResource( 11 )
 volume_db = -12.242
+
+[node name="SwingSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 20 )
+volume_db = -16.892
+
+[node name="HitSound" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 21 )
+volume_db = -14.786
 
 [node name="DeathTimer" type="Timer" parent="."]
 process_mode = 0

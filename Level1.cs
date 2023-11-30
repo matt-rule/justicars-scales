@@ -45,6 +45,7 @@ public class DemonHistoricalState
 	public bool InPlayerSwordRange;
 	public uint DamageId;
 	public bool Alive;
+	public double DeathTimestamp;
 	public double LastAttackTimestamp;
 	public bool AttackPending;
 	public bool PlayerInSwipeRange;
@@ -95,18 +96,8 @@ public class DivineDamageReport
 
 public class Level1 : Node
 {
-	const String STORY_TEXT_1 = "\"Pagans!\" the head priest was yelling hysterically at me.  \"Drive them from these lands!\"";
-	const String STORY_TEXT_2 = "But so far I have yet to see a single human.  Instead, my mission has led me deeper into the forest.  I am no longer sure of my way.";
-	
-	const String LANTERN_TEXT_1 = "Use the arrow keys or thumbstick to move.";
-	const String LANTERN_TEXT_2 = "To jump, press up (Cross or Xbox A).";
-	const String LANTERN_TEXT_3 = "To attack, press Q or R1.";
-	const String LANTERN_TEXT_4x = "To use the bell, Press W (Square or Xbox X).";
-	const String LANTERN_TEXT_4 = "To flick back in time (hourglass), Press E (Circle or Xbox B).";
-	const String LANTERN_TEXT_5 = "Retribution: press R (Triangle or Xbox Y). One usage per life; use it to react to attacks.";
-	const String LANTERN_TEXT_6 = "Retribution balances all recent damage. Thus, it is a double-edged sword.";
-	const String LANTERN_TEXT_7 = "If your health drops into the left side of the bar, you have only moments to save yourself.";
-	const String LANTERN_TEXT_8 = "Retribution and the hourglass can synergise against large opponents. You can do this.";
+//	const String STORY_TEXT_1 = "\"Pagans!\" the head priest was yelling hysterically at me.  \"Drive them from these lands!\"";
+//	const String STORY_TEXT_2 = "But so far I have yet to see a single human.  Instead, my mission has led me deeper into the forest.  I am no longer sure of my way.";
 	
 	public const int HISTORY_MAX_RECORDS = 10;
 	public const int HISTORY_SAMPLES_PER_SECOND = 2;
@@ -170,21 +161,15 @@ public class Level1 : Node
 	{
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
 		
-		var lantern = GetNode<AnimatedSprite>("Lantern");
-		var lantern2 = GetNode<AnimatedSprite>("Lantern2");
-		var lantern3 = GetNode<AnimatedSprite>("Lantern3");
-		var lantern4 = GetNode<AnimatedSprite>("Lantern4");
-		var lantern5 = GetNode<AnimatedSprite>("Lantern5");
-		var lantern6 = GetNode<AnimatedSprite>("Lantern6");
-		var lantern7 = GetNode<AnimatedSprite>("Lantern7");
-		
-		lantern.Animation = (spawnPoint.Position.x <= lantern.Position.x) ? "on" : "off";
-		lantern2.Animation = (spawnPoint.Position.x <= lantern2.Position.x) ? "on" : "off";
-		lantern3.Animation = (spawnPoint.Position.x <= lantern3.Position.x) ? "on" : "off";
-		lantern4.Animation = (spawnPoint.Position.x <= lantern4.Position.x) ? "on" : "off";
-		lantern5.Animation = (spawnPoint.Position.x <= lantern5.Position.x) ? "on" : "off";
-		lantern6.Animation = (spawnPoint.Position.x <= lantern6.Position.x) ? "on" : "off";
-		lantern7.Animation = (spawnPoint.Position.x <= lantern7.Position.x) ? "on" : "off";
+		foreach (var c in GetNode("Lanterns").GetChildren())
+		{
+			var lantern = c as Lantern;
+			
+			if (lantern == null)
+				continue;
+				
+			lantern.Animation = (spawnPoint.Position.x >= lantern.Position.x) ? "on" : "off";
+		}
 	}
 	
 	public void HistoryTick()
@@ -262,6 +247,7 @@ public class Level1 : Node
 			demonHistory.InPlayerSwordRange = demon.InPlayerSwordRange;
 			demonHistory.DamageId = demon.DamageId;
 			demonHistory.Alive = demon.Alive;
+			demonHistory.DeathTimestamp = demon.DeathTimestamp;
 			demonHistory.LastAttackTimestamp = demon.LastAttackTimestamp;
 			demonHistory.AttackPending = demon.AttackPending;
 			demonHistory.PlayerInSwipeRange = demon.PlayerInSwipeRange;
@@ -314,6 +300,7 @@ public class Level1 : Node
 			return;
 		
 		var mainNode = GetParent<Main>();
+		var mediaNode = mainNode.GetNode("MediaNode");
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var playerSprite = playerCharNode.GetNode<AnimatedSprite>("AnimatedSprite");
 		var dryadsNode = GetNode("Dryads");
@@ -323,6 +310,8 @@ public class Level1 : Node
 		
 		var levelHistory = LevelHistory.Peek();
 		LevelHistory.Clear();
+		
+		double timeDiff = now - levelHistory.Timestamp;
 		
 		foreach (var c in dryadsNode.GetChildren())
 		{
@@ -371,10 +360,10 @@ public class Level1 : Node
 		playerCharNode.Position = playerHistory.Position;
 		playerCharNode.Velocity = playerHistory.Velocity;
 		playerCharNode.Grounded = playerHistory.Grounded;
-		playerCharNode.LastAttackTimestamp = playerHistory.LastAttackTimestamp;
+		playerCharNode.LastAttackTimestamp = playerHistory.LastAttackTimestamp + timeDiff;
 		playerCharNode.PendingAttackConnected = playerHistory.PendingAttackConnected;
 		playerCharNode.PendingScales = playerHistory.PendingScales;
-		playerCharNode.UsedScalesTimestamp = playerHistory.UsedScalesTimestamp;
+		playerCharNode.UsedScalesTimestamp = playerHistory.UsedScalesTimestamp == 0 ? 0 : playerHistory.UsedScalesTimestamp + timeDiff;
 		playerCharNode.PendingHourglass = false;
 		playerCharNode.UsedHourglassTimestamp = 0;
 		
@@ -397,7 +386,7 @@ public class Level1 : Node
 			newDryad.Health = dryadHistory.Health;
 			newDryad.Position = dryadHistory.Position;
 			newDryad.State = dryadHistory.AttackState;
-			newDryad.LastStartCastTimestamp = dryadHistory.LastStartCastTimestamp;
+			newDryad.LastStartCastTimestamp = dryadHistory.LastStartCastTimestamp + timeDiff;
 			newDryad.InPlayerSwordRange = dryadHistory.InPlayerSwordRange;
 			newDryad.Target = playerCharNode;
 			newDryad.DamageId = dryadHistory.DamageId;
@@ -427,7 +416,7 @@ public class Level1 : Node
 				continue;
 				
 			newFire.Position = fireHistory.Position;
-			newFire.CreatedTimestamp = fireHistory.CreatedTimestamp;
+			newFire.CreatedTimestamp = fireHistory.CreatedTimestamp + timeDiff;
 			newFire.Target = playerCharNode;
 			
 			dryadFiresNode.AddChild(newFire);
@@ -445,7 +434,8 @@ public class Level1 : Node
 			newDemon.Target = playerCharNode;
 			newDemon.DamageId = demonHistory.DamageId;
 			newDemon.Alive = demonHistory.Alive;
-			newDemon.LastAttackTimestamp = demonHistory.LastAttackTimestamp;
+			newDemon.DeathTimestamp = demonHistory.DeathTimestamp == 0 ? 0 : demonHistory.DeathTimestamp + timeDiff;
+			newDemon.LastAttackTimestamp = demonHistory.LastAttackTimestamp + timeDiff;
 			newDemon.AttackPending = demonHistory.AttackPending;
 			newDemon.PlayerInSwipeRange = demonHistory.PlayerInSwipeRange;
 			
@@ -459,13 +449,13 @@ public class Level1 : Node
 						newDemon.Health = LargeDemon.MAX_HEALTH;
 					if (newDemon.Health <= 0)
 					{
-						var deathSound = mainNode.GetNode("MediaNode")
+						var deathSound = mediaNode
 							.GetNode<AudioStreamPlayer2D>("DemonDeath");
 						deathSound.Position = newDemon.Position;
 						deathSound.Play();
 						
 						newDemon.Alive = false;
-						newDemon.QueueFree();
+						newDemon.DeathTimestamp = now;
 					}
 				}
 			}
@@ -485,8 +475,8 @@ public class Level1 : Node
 			newGoblin.Target = playerCharNode;
 			newGoblin.DamageId = goblinHistory.DamageId;
 			newGoblin.Alive = goblinHistory.Alive;
-			newGoblin.DeathTimestamp = goblinHistory.DeathTimestamp;
-			newGoblin.LastAttackTimestamp = goblinHistory.LastAttackTimestamp;
+			newGoblin.DeathTimestamp = goblinHistory.DeathTimestamp == 0 ? 0 : goblinHistory.DeathTimestamp + timeDiff;
+			newGoblin.LastAttackTimestamp = goblinHistory.LastAttackTimestamp + timeDiff;
 			newGoblin.AttackPending = goblinHistory.AttackPending;
 			newGoblin.PlayerInAttackRange = goblinHistory.PlayerInAttackRange;
 			
@@ -500,10 +490,10 @@ public class Level1 : Node
 						newGoblin.Health = Goblin.MAX_HEALTH;
 					if (newGoblin.Health <= 0)
 					{
-//						var deathSound = mainNode.GetNode("MediaNode")
-//							.GetNode<AudioStreamPlayer2D>("GoblinDeath");
-//						deathSound.Position = newGoblin.Position;
-//						deathSound.Play();
+						var deathSound = mediaNode
+							.GetNode<AudioStreamPlayer2D>("GoblinDeathSound");
+						deathSound.Position = newGoblin.Position;
+						deathSound.Play();
 						
 						newGoblin.Alive = false;
 						newGoblin.DeathTimestamp = now;
@@ -533,6 +523,7 @@ public class Level1 : Node
 	{
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var mainNode = GetParent();
+		var mediaNode = mainNode.GetNode("MediaNode");
 		var dryadsNode = GetNode("Dryads");
 		var demonsNode = GetNode("Demons");
 		var goblinsNode = GetNode("Goblins");
@@ -573,7 +564,8 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = playerCharNode.Position;
 						hitSound.Play();
 						if (playerCharNode.Health < -100)
 							playerCharNode.Health = -100;
@@ -599,7 +591,8 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = dryad.Position;
 						hitSound.Play();
 						if (dryad.Health <= 0)
 						{
@@ -652,7 +645,8 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = playerCharNode.Position;
 						hitSound.Play();
 						if (playerCharNode.Health < -100)
 							playerCharNode.Health = -100;
@@ -678,7 +672,8 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = demon.Position;
 						hitSound.Play();
 						if (demon.Health <= 0)
 						{
@@ -688,7 +683,7 @@ public class Level1 : Node
 							deathSound.Play();
 					
 							demon.Alive = false;
-							demon.QueueFree();
+							demon.DeathTimestamp = now;
 						}
 						else
 						{
@@ -733,7 +728,8 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = playerCharNode.Position;
 						hitSound.Play();
 						if (playerCharNode.Health < -100)
 							playerCharNode.Health = -100;
@@ -759,14 +755,15 @@ public class Level1 : Node
 						divineReport2.Timestamp = now;
 						DivineDamageHistory.Add(divineReport2);
 						
-						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Position = goblin.Position;
 						hitSound.Play();
 						if (goblin.Health <= 0)
 						{
-//							var deathSound = mainNode.GetNode("MediaNode")
-//								.GetNode<AudioStreamPlayer2D>("DemonDeath");
-//							deathSound.Position = goblin.Position;
-//							deathSound.Play();
+							var deathSound = mainNode.GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("GoblinDeathSound");
+							deathSound.Position = goblin.Position;
+							deathSound.Play();
 					
 							goblin.Alive = false;
 							goblin.DeathTimestamp = now;
@@ -774,7 +771,7 @@ public class Level1 : Node
 						else
 						{
 							var onHitSound = GetParent().GetNode("MediaNode")
-								.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
+								.GetNode<AudioStreamPlayer2D>("GoblinAttackedSound");
 							onHitSound.Position = goblin.Position;
 							onHitSound.Play();
 						}
@@ -811,105 +808,37 @@ public class Level1 : Node
 		// Reset player char if it goes below a certain Y coordinate
 		//var startPosition = GetNode<Position2D>("StartPosition");
 		if (playerCharNode.Position.y > PlayerChar.MIN_Y_COORD)
-		{
-//			var mainNode = GetParent<Main>();
-//			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("LanternSound").Play();
 			GetParent<Main>().ProcessPlayerDeath();
-		}
 		
 		// Check distance to lantern
-		var lantern = GetNode<AnimatedSprite>("Lantern");
-		var lantern2 = GetNode<AnimatedSprite>("Lantern2");
-		var lantern3 = GetNode<AnimatedSprite>("Lantern3");
-		var lantern4 = GetNode<AnimatedSprite>("Lantern4");
-		var lantern5 = GetNode<AnimatedSprite>("Lantern5");
-		var lantern6 = GetNode<AnimatedSprite>("Lantern6");
-		var lantern7 = GetNode<AnimatedSprite>("Lantern7");
 		var hud = GetParent().GetNode<HUD>("HUD");
 		var mediaNode = GetParent().GetNode<Node>("MediaNode");
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
 		
-		if (Math.Abs(playerCharNode.Position.x - lantern.Position.x) < LANTERN_DISTANCE)
+		bool showHint = false;
+		foreach (var c in GetNode("Lanterns").GetChildren())
 		{
-			hud.ShowHint(LANTERN_TEXT_1);
-			if (lantern.Animation != "on")
-			{
-				lantern.Animation = "on";
-				if (spawnPoint.Position.x > lantern.Position.x)
-					spawnPoint.Position = lantern.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
+			var lantern = c as Lantern;
+			if (lantern == null)
+				continue;
+				
+			if (Math.Abs(playerCharNode.Position.x - lantern.Position.x) > LANTERN_DISTANCE)
+				continue;
+
+			showHint = true;
+			hud.ShowHint(lantern.Text);
+			if (lantern.Animation == "on")
+				continue;
+			
+			lantern.Animation = "on";
+			if (spawnPoint.Position.x < lantern.Position.x)
+				spawnPoint.Position = lantern.Position;
+			mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
+			playerCharNode.Health = MAX_HEALTH;
 		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern2.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_2);
-			if (lantern2.Animation != "on")
-			{
-				lantern2.Animation = "on";
-				if (spawnPoint.Position.x > lantern2.Position.x)
-					spawnPoint.Position = lantern2.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern3.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_3);
-			if (lantern3.Animation != "on")
-			{
-				lantern3.Animation = "on";
-				if (spawnPoint.Position.x > lantern3.Position.x)
-					spawnPoint.Position = lantern3.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern4.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_4);
-			if (lantern4.Animation != "on")
-			{
-				lantern4.Animation = "on";
-				if (spawnPoint.Position.x > lantern4.Position.x)
-					spawnPoint.Position = lantern4.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern5.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_5);
-			if (lantern5.Animation != "on")
-			{
-				lantern5.Animation = "on";
-				if (spawnPoint.Position.x > lantern5.Position.x)
-					spawnPoint.Position = lantern5.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern6.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_6);
-			if (lantern6.Animation != "on")
-			{
-				lantern6.Animation = "on";
-				if (spawnPoint.Position.x > lantern6.Position.x)
-					spawnPoint.Position = lantern6.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else if (Math.Abs(playerCharNode.Position.x - lantern7.Position.x) < LANTERN_DISTANCE)
-		{
-			hud.ShowHint(LANTERN_TEXT_7);
-			if (lantern7.Animation != "on")
-			{
-				lantern7.Animation = "on";
-				if (spawnPoint.Position.x > lantern7.Position.x)
-					spawnPoint.Position = lantern7.Position;
-				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			}
-		}
-		else
-		{
+		
+		if (!showHint)
 			hud.HideHint();
-		}
 		
 //		if (!ShownStory && (playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
 //		{

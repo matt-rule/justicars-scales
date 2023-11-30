@@ -131,6 +131,7 @@ public class HUD : CanvasLayer
 					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
+					mainNode.GetNode<Position2D>("StartPosition").Position = new Vector2(2727, 160);
 					GetNode<TextureRect>("MainMenuLogo").Show();
 					GetNode<Label>("MainMenuLabel1").Show();
 					GetNode<Label>("MainMenuLabel2").Show();
@@ -170,7 +171,11 @@ public class HUD : CanvasLayer
 
 	private void OnCreditsButtonPressed()
 	{
-		// Replace with function body.
+		GetNode<Panel>("CreditsPanel").Show();
+		GetNode<TextureRect>("MainMenuLogo").Hide();
+		GetNode<Label>("MainMenuLabel1").Hide();
+		GetNode<Label>("MainMenuLabel2").Hide();
+		GetNode<Panel>("MainMenuPanel").Hide();
 	}
 	
 	private void MainMenuButtonPressed()
@@ -184,7 +189,12 @@ public class HUD : CanvasLayer
 		DialogBehaviour = DialogBehaviour.QuitToMainMenu;
 	}
 	
-	public override void _Process(float delta)
+	private void CloseCreditsButtonPressed()
 	{
+		GetNode<Panel>("CreditsPanel").Hide();
+		GetNode<TextureRect>("MainMenuLogo").Show();
+		GetNode<Label>("MainMenuLabel1").Show();
+		GetNode<Label>("MainMenuLabel2").Show();
+		GetNode<Panel>("MainMenuPanel").Show();
 	}
 }

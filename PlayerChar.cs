@@ -14,7 +14,7 @@ public class PlayerChar : KinematicBody2D
 	public static int MOVE_SPEED = 250; // How fast the player will move (pixels/sec).
 	public static int JUMP_FORCE = 350;
 	public static int GRAVITY = 900;
-	public static int MIN_Y_COORD = 240;
+	public static int MIN_Y_COORD = 480;
 	public static int HP_BAR_WIDTH = 85;
 	public static int HP_BAR_HEIGHT = 8;
 	public static int BLEED_BAR_POS_X = 85;
@@ -140,7 +140,7 @@ public class PlayerChar : KinematicBody2D
 			var hud = main.GetNode<HUD>("HUD");
 			var media = main.GetNode("MediaNode");
 			
-			var level = main.GetNode<Level1>("Level1");
+			var level = GetParent<Level1>();
 			level.ProcessHourglass();
 
 			var overlay = hud.GetNode<AnimatedSprite>("ItemOverlay");
@@ -287,10 +287,7 @@ public class PlayerChar : KinematicBody2D
 			BleedPosition = Health;
 		
 		if ( BleedPosition <= 0 && BleedPosition <= Health )
-		{
-			//GetParent().GetParent<Main>().GetNode("MediaNode").GetNode<AudioStreamPlayer>("LanternSound").Play();
 			GetParent().GetParent<Main>().ProcessPlayerDeath();
-		}
 	}
 
 	private void PlayerCharAnimationFinished()
@@ -333,17 +330,19 @@ public class PlayerChar : KinematicBody2D
 		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
+		var mediaNode = mainNode.GetNode("MediaNode");
 		
 		if (dryad.InPlayerSwordRange)
 		{
-			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
+			var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+			hitSound.Position = Position;
 			hitSound.Play();
 			int prevTargetHealth = dryad.Health;
 			dryad.Health -= SWORD_DAMAGE_DRYAD;
 			dryad.LastAffectedTimestamp = now;
 			if (dryad.Health <= 0)
 			{
-				var deathSound = mainNode.GetNode("MediaNode")
+				var deathSound = mediaNode
 					.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
 				deathSound.Position = dryad.Position;
 				deathSound.Play();
@@ -351,7 +350,7 @@ public class PlayerChar : KinematicBody2D
 			}
 			else
 			{
-				var onHitSound = mainNode.GetNode("MediaNode")
+				var onHitSound = mediaNode
 					.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
 				onHitSound.Position = dryad.Position;
 				onHitSound.Play();
@@ -371,10 +370,12 @@ public class PlayerChar : KinematicBody2D
 		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
+		var mediaNode = mainNode.GetNode("MediaNode");
 		
-		if (demon.InPlayerSwordRange)
+		if (demon.Alive && demon.InPlayerSwordRange)
 		{
-			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
+			var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+			hitSound.Position = Position;
 			hitSound.Play();
 			int prevTargetHealth = demon.Health;
 			demon.Health -= SWORD_DAMAGE_DEMON;
@@ -387,7 +388,7 @@ public class PlayerChar : KinematicBody2D
 				deathSound.Play();
 				
 				demon.Alive = false;
-				demon.QueueFree();
+				demon.DeathTimestamp = now;
 			}
 			else
 			{
@@ -411,30 +412,32 @@ public class PlayerChar : KinematicBody2D
 		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
+		var mediaNode = mainNode.GetNode("MediaNode");
 		
-		if (goblin.InPlayerSwordRange)
+		if (goblin.Alive && goblin.InPlayerSwordRange)
 		{
-//			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
-//			hitSound.Play();
+			var hitSound = mediaNode.GetNode<AudioStreamPlayer2D>("HitSound");
+			hitSound.Position = Position;
+			hitSound.Play();
 			int prevTargetHealth = goblin.Health;
 			goblin.Health -= SWORD_DAMAGE_GOBLIN;
 			goblin.LastAffectedTimestamp = now;
 			if (goblin.Health <= 0)
 			{
-//				var deathSound = mainNode.GetNode("MediaNode")
-//					.GetNode<AudioStreamPlayer2D>("DemonDeath");
-//				deathSound.Position = goblin.Position;
-//				deathSound.Play();
+				var deathSound = mainNode.GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("GoblinDeathSound");
+				deathSound.Position = goblin.Position;
+				deathSound.Play();
 				
 				goblin.Alive = false;
 				goblin.DeathTimestamp = now;
 			}
 			else
 			{
-//				var onHitSound = mainNode.GetNode("MediaNode")
-//					.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
-//				onHitSound.Position = goblin.Position;
-//				onHitSound.Play();
+				var onHitSound = mainNode.GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("GoblinAttackedSound");
+				onHitSound.Position = goblin.Position;
+				onHitSound.Play();
 			}
 			
 			var damageReport = new DamageReport();
@@ -448,8 +451,12 @@ public class PlayerChar : KinematicBody2D
 
 	private void OnAttackProcess()
 	{
+		var levelNode = GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
 		var swordCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
-		var swingSound = GetNode<AudioStreamPlayer2D>("SwingSound");
+		var swingSound = 
+			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("SwingSound");
+		swingSound.Position = Position;
 		swingSound.Play();
 		
 		foreach (var node in GetParent().GetNode("Dryads").GetChildren())

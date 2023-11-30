@@ -1,11 +1,9 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=23 format=2]
 
-[ext_resource path="res://assets/sfx/77611__joelaudio__sfx_attack_sword_001.wav" type="AudioStream" id=1]
 [ext_resource path="res://assets/running-animation48x48-white-clothes-spritesheet.png" type="Texture" id=2]
 [ext_resource path="res://PlayerChar.cs" type="Script" id=3]
 [ext_resource path="res://assets/sfx/221756__motion_s__grass-footsteps4.wav" type="AudioStream" id=4]
 [ext_resource path="res://assets/sfx/353542__maxmakessounds__hup.wav" type="AudioStream" id=5]
-[ext_resource path="res://assets/sfx/263011__dermotte__sword_02.wav" type="AudioStream" id=6]
 
 [sub_resource type="AtlasTexture" id=3]
 atlas = ExtResource( 2 )
@@ -113,14 +111,6 @@ shape = SubResource( 2 )
 
 [node name="GrassSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource( 4 )
-
-[node name="SwingSound" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource( 6 )
-volume_db = -16.892
-
-[node name="HitSound" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource( 1 )
-volume_db = -14.786
 
 [node name="JumpSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource( 5 )

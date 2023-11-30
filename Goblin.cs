@@ -13,8 +13,8 @@ public class Goblin : KinematicBody2D
 	public static double ATTACK_DELAY = 0.2;
 	public static double ATTACK_RESET_ANIMATION = 0.6;
 	public static double ATTACK_COOLDOWN_SECS = 2; // From beginning of attack
-	public static int DAMAGE_ONTO_PLAYER = 8;
-	public static double DEATH_DURATION_SECS = 0.6;
+	public static int DAMAGE_ONTO_PLAYER = 20;
+	public static double DEATH_DURATION_SECS = 0.2;
 	
 	public bool InPlayerSwordRange = false;
 	public double LastAffectedTimestamp = 0;
@@ -45,6 +45,9 @@ public class Goblin : KinematicBody2D
 	
 	public void AiMove()
 	{
+		var levelNode = GetParent().GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
 		if (!Alive)
 			return;
 			
@@ -85,6 +88,11 @@ public class Goblin : KinematicBody2D
 				LastAttackTimestamp = Time.GetUnixTimeFromSystem();
 				sprite.Animation = "attacking";
 				AttackPending = true;
+				
+				AudioStreamPlayer2D swingSound =
+					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("SwingSound");
+				swingSound.Position = Position;
+				swingSound.Play();
 			}
 			else if (LastAttackTimestamp + ATTACK_RESET_ANIMATION > Time.GetUnixTimeFromSystem() )
 			{
@@ -128,7 +136,7 @@ public class Goblin : KinematicBody2D
 		AiMove();
 		
 		if (AttackPending
-			&& LastAttackTimestamp + ATTACK_DELAY < Time.GetUnixTimeFromSystem() )
+			&& LastAttackTimestamp + ATTACK_DELAY < now )
 		{
 			AttackPending = false;
 			ProcessAttack();
@@ -144,10 +152,10 @@ public class Goblin : KinematicBody2D
 		var levelNode = GetParent().GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
 		
-//		AudioStreamPlayer2D swipeSound =
-//			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("DemonSwipe");
-//		swipeSound.Position = Position;
-//		swipeSound.Play();
+		AudioStreamPlayer2D hitSound =
+			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("HitSound");
+		hitSound.Position = Position;
+		hitSound.Play();
 		
 		if (PlayerInAttackRange)
 		{
