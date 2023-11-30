@@ -91,6 +91,7 @@ script = ExtResource( 2 )
 __meta__ = {
 "_edit_group_": true
 }
+DamageId = 1054
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2( 0, 1 )

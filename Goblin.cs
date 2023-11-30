@@ -1,27 +1,29 @@
 using Godot;
 using System;
 
-public class LargeDemon : KinematicBody2D
+public class Goblin : KinematicBody2D
 {
-	public static int MOVE_SPEED = 100;
-	public static int MAX_RANGE = 30;
-	public static int MIN_RANGE = 20;
+	public static int MOVE_SPEED = 120;
+	public static int MAX_RANGE = 25;
+	public static int MIN_RANGE = 12;
 	public static float LOS = 100;
-	public const int MAX_HEALTH = 120;
+	public const int MAX_HEALTH = 36;
 	public static double HIDE_HP_BAR_SECS = 4;
-	public static int HP_BAR_WIDTH = 20;
+	public static int HP_BAR_WIDTH = 12;
 	public static double ATTACK_DELAY = 0.2;
 	public static double ATTACK_RESET_ANIMATION = 0.6;
-	public static double ATTACK_COOLDOWN_SECS = 5; // From beginning of attack
-	public static int DAMAGE_ONTO_PLAYER = 140;
+	public static double ATTACK_COOLDOWN_SECS = 2; // From beginning of attack
+	public static int DAMAGE_ONTO_PLAYER = 8;
+	public static double DEATH_DURATION_SECS = 0.6;
 	
 	public bool InPlayerSwordRange = false;
 	public double LastAffectedTimestamp = 0;
 	public double LastAttackTimestamp = 0;
+	public double DeathTimestamp = 0;
 	public bool AttackPending = false;
-	public bool PlayerInSwipeRange = false;
+	public bool PlayerInAttackRange = false;
 	public bool Alive = true;
-
+	
 	[Export]
 	public int Health = MAX_HEALTH;
 	
@@ -43,6 +45,9 @@ public class LargeDemon : KinematicBody2D
 	
 	public void AiMove()
 	{
+		if (!Alive)
+			return;
+			
 		float direction = AiGetDirection();
 		
 		AnimatedSprite sprite = 
@@ -90,19 +95,36 @@ public class LargeDemon : KinematicBody2D
 				sprite.Animation = "idle";
 		}
 		
-		var swipeCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwipeCollisionShape");
+		var attackCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwordCollisionShape");
 		if (sprite.FlipH)
 		{
-			swipeCollisionShape.Position = new Vector2 (-10, -10);
+			attackCollisionShape.Position = new Vector2 (-17, 5);
 		}
 		else
 		{
-			swipeCollisionShape.Position = new Vector2 (10, -10);
+			attackCollisionShape.Position = new Vector2 (17, 5);
 		}
 	}
 	
 	public override void _PhysicsProcess(float delta)
 	{
+		var now = Time.GetUnixTimeFromSystem();
+		
+		if (DeathTimestamp != 0)
+		{
+			if (DeathTimestamp + DEATH_DURATION_SECS < now)
+			{
+				QueueFree();
+			}
+			else
+			{
+				AnimatedSprite sprite = 
+					GetNode<AnimatedSprite>("AnimatedSprite");
+				sprite.Animation = "death";
+			}
+			return;
+		}
+		
 		AiMove();
 		
 		if (AttackPending
@@ -115,16 +137,19 @@ public class LargeDemon : KinematicBody2D
 	
 	private void ProcessAttack()
 	{
+		if (!Alive)
+			return;
+		
 		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent().GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
 		
-		AudioStreamPlayer2D swipeSound =
-			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("DemonSwipe");
-		swipeSound.Position = Position;
-		swipeSound.Play();
+//		AudioStreamPlayer2D swipeSound =
+//			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("DemonSwipe");
+//		swipeSound.Position = Position;
+//		swipeSound.Play();
 		
-		if (PlayerInSwipeRange)
+		if (PlayerInAttackRange)
 		{
 			int prevTargetHealth = Target.Health;
 			Target.Health -= DAMAGE_ONTO_PLAYER;
@@ -140,7 +165,7 @@ public class LargeDemon : KinematicBody2D
 			levelNode.DamageHistory.Enqueue(damageReport);
 		}
 	}
-		
+	
 	public override void _Process(float delta)
 	{
 		bool visible = LastAffectedTimestamp + HIDE_HP_BAR_SECS > Time.GetUnixTimeFromSystem();
@@ -151,17 +176,17 @@ public class LargeDemon : KinematicBody2D
 		rectBg.Visible = visible;
 	}
 	
-	private void OnSwipeCollisionBodyEntered(object body)
+	private void OnAttackCollisionBodyEntered(object body)
 	{
 		var player = body as PlayerChar;
 		if (player != null)
-			PlayerInSwipeRange = true;
+			PlayerInAttackRange = true;
 	}
 
-	private void OnSwipeCollisionBodyExited(object body)
+	private void OnAttackCollisionBodyExited(object body)
 	{
 		var player = body as PlayerChar;
 		if (player != null)
-			PlayerInSwipeRange = false;
+			PlayerInAttackRange = false;
 	}
 }

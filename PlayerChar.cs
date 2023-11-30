@@ -35,6 +35,7 @@ public class PlayerChar : KinematicBody2D
 	
 	public const int SWORD_DAMAGE_DRYAD = 10;
 	public const int SWORD_DAMAGE_DEMON = 2;
+	public const int SWORD_DAMAGE_GOBLIN = 12;
 	
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -309,6 +310,9 @@ public class PlayerChar : KinematicBody2D
 		var demon = body as LargeDemon;
 		if (demon != null)
 			demon.InPlayerSwordRange = true;
+		var goblin = body as Goblin;
+		if (goblin != null)
+			goblin.InPlayerSwordRange = true;
 	}
 
 	private void OnSwordCollisionBodyExited(object body)
@@ -319,6 +323,9 @@ public class PlayerChar : KinematicBody2D
 		var demon = body as LargeDemon;
 		if (demon != null)
 			demon.InPlayerSwordRange = false;
+		var goblin = body as Goblin;
+		if (goblin != null)
+			goblin.InPlayerSwordRange = false;
 	}
 
 	private void ProcessAttack(Dryad dryad)
@@ -374,13 +381,66 @@ public class PlayerChar : KinematicBody2D
 			demon.LastAffectedTimestamp = now;
 			if (demon.Health <= 0)
 			{
+				var deathSound = mainNode.GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("DemonDeath");
+				deathSound.Position = demon.Position;
+				deathSound.Play();
+				
+				demon.Alive = false;
 				demon.QueueFree();
+			}
+			else
+			{
+				var onHitSound = mainNode.GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
+				onHitSound.Position = demon.Position;
+				onHitSound.Play();
 			}
 			
 			var damageReport = new DamageReport();
 			damageReport.Who = demon.DamageId;
 			damageReport.FromPlayer = true;
 			damageReport.Amount = prevTargetHealth - demon.Health;
+			damageReport.Timestamp = now;
+			levelNode.DamageHistory.Enqueue(damageReport);
+		}
+	}
+	
+	private void ProcessAttack(Goblin goblin)
+	{
+		var now = Time.GetUnixTimeFromSystem();
+		var levelNode = GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
+		if (goblin.InPlayerSwordRange)
+		{
+//			var hitSound = GetNode<AudioStreamPlayer2D>("HitSound");
+//			hitSound.Play();
+			int prevTargetHealth = goblin.Health;
+			goblin.Health -= SWORD_DAMAGE_GOBLIN;
+			goblin.LastAffectedTimestamp = now;
+			if (goblin.Health <= 0)
+			{
+//				var deathSound = mainNode.GetNode("MediaNode")
+//					.GetNode<AudioStreamPlayer2D>("DemonDeath");
+//				deathSound.Position = goblin.Position;
+//				deathSound.Play();
+				
+				goblin.Alive = false;
+				goblin.DeathTimestamp = now;
+			}
+			else
+			{
+//				var onHitSound = mainNode.GetNode("MediaNode")
+//					.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
+//				onHitSound.Position = goblin.Position;
+//				onHitSound.Play();
+			}
+			
+			var damageReport = new DamageReport();
+			damageReport.Who = goblin.DamageId;
+			damageReport.FromPlayer = true;
+			damageReport.Amount = prevTargetHealth - goblin.Health;
 			damageReport.Timestamp = now;
 			levelNode.DamageHistory.Enqueue(damageReport);
 		}
@@ -405,6 +465,13 @@ public class PlayerChar : KinematicBody2D
 			if (demon == null)
 				continue;
 			ProcessAttack(demon);
+		}
+		foreach (var node in GetParent().GetNode("Goblins").GetChildren())
+		{
+			var goblin = node as Goblin;
+			if (goblin == null)
+				continue;
+			ProcessAttack(goblin);
 		}
 	}
 

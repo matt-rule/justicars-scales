@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://Level1.tscn" type="PackedScene" id=2]
@@ -14,6 +14,9 @@
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice3.wav" type="AudioStream" id=12]
 [ext_resource path="res://assets/sfx/646406__bloodpixelhero__ghost-voice.wav" type="AudioStream" id=13]
 [ext_resource path="res://assets/sfx/436421__glen_hoban__singingbowl_84.wav" type="AudioStream" id=14]
+[ext_resource path="res://assets/sfx/253682__julius_galla__monster-step-foreleg-12.wav" type="AudioStream" id=15]
+[ext_resource path="res://assets/sfx/207745__mistersegev__deep-monster-roar_3.wav" type="AudioStream" id=16]
+[ext_resource path="res://assets/sfx/207745__mistersegev__deep-monster-roar_2.wav" type="AudioStream" id=17]
 [ext_resource path="res://assets/441497__matrixxx__retro-explosion-05.wav" type="AudioStream" id=42]
 [ext_resource path="res://assets/524689__klankbeeld__forest-summer-roond-007-200619_0186.mp3" type="AudioStream" id=43]
 
@@ -123,6 +126,18 @@ volume_db = -12.412
 [node name="LandingSound" type="AudioStreamPlayer2D" parent="MediaNode"]
 stream = ExtResource( 9 )
 volume_db = -26.552
+
+[node name="DemonSwipe" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 15 )
+volume_db = 0.544
+
+[node name="DemonDeath" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 17 )
+volume_db = 0.544
+
+[node name="DemonIsHurt" type="AudioStreamPlayer2D" parent="MediaNode"]
+stream = ExtResource( 16 )
+volume_db = 0.544
 
 [node name="DryadAttackedSound" type="AudioStreamPlayer2D" parent="MediaNode"]
 stream = ExtResource( 12 )

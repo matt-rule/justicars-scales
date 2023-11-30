@@ -44,9 +44,25 @@ public class DemonHistoricalState
 	public Vector2 Velocity;
 	public bool InPlayerSwordRange;
 	public uint DamageId;
+	public bool Alive;
 	public double LastAttackTimestamp;
 	public bool AttackPending;
 	public bool PlayerInSwipeRange;
+}
+
+public class GoblinHistoricalState
+{
+	public bool FacingLeft;
+	public int Health;
+	public Vector2 Position;
+	public Vector2 Velocity;
+	public bool InPlayerSwordRange;
+	public uint DamageId;
+	public bool Alive;
+	public double DeathTimestamp;
+	public double LastAttackTimestamp;
+	public bool AttackPending;
+	public bool PlayerInAttackRange;
 }
 
 public class HistoricalLevelState
@@ -57,6 +73,7 @@ public class HistoricalLevelState
 	public List<DryadHistoricalState> DryadList = new List<DryadHistoricalState>();
 	public List<DryadFireHistoricalState> DryadFireList = new List<DryadFireHistoricalState>();
 	public List<DemonHistoricalState> DemonList = new List<DemonHistoricalState>();
+	public List<GoblinHistoricalState> GoblinList = new List<GoblinHistoricalState>();
 	public Queue<DamageReport> DamageHistory;		// The history, but at this point in history
 }
 
@@ -116,6 +133,9 @@ public class Level1 : Node
 	
 	[Export]
 	public PackedScene DemonScene { get; set; }
+	
+	[Export]
+	public PackedScene GoblinScene { get; set; }
 #pragma warning restore 649
 
 	// Called when the node enters the scene tree for the first time.
@@ -175,6 +195,7 @@ public class Level1 : Node
 		var dryadsNode = GetNode("Dryads");
 		var dryadFiresNode = GetNode("DryadFires");
 		var demonsNode = GetNode("Demons");
+		var goblinsNode = GetNode("Goblins");
 		
 		if (LevelHistory.Count >= HISTORY_MAX_RECORDS)
 			LevelHistory.Dequeue();		// Dequeue the oldest item in the queue
@@ -240,11 +261,35 @@ public class Level1 : Node
 			demonHistory.Position = demon.Position;
 			demonHistory.InPlayerSwordRange = demon.InPlayerSwordRange;
 			demonHistory.DamageId = demon.DamageId;
+			demonHistory.Alive = demon.Alive;
 			demonHistory.LastAttackTimestamp = demon.LastAttackTimestamp;
 			demonHistory.AttackPending = demon.AttackPending;
 			demonHistory.PlayerInSwipeRange = demon.PlayerInSwipeRange;
 			
 			newHistory.DemonList.Add(demonHistory);
+		}
+		
+		foreach (var c in goblinsNode.GetChildren())
+		{
+			Goblin goblin = c as Goblin;
+			if (goblin == null)
+				continue;
+				
+			var sprite = goblin.GetNode<AnimatedSprite>("AnimatedSprite");
+			
+			var goblinHistory = new GoblinHistoricalState();
+			goblinHistory.FacingLeft = sprite.FlipH;
+			goblinHistory.Health = goblin.Health;
+			goblinHistory.Position = goblin.Position;
+			goblinHistory.InPlayerSwordRange = goblin.InPlayerSwordRange;
+			goblinHistory.DamageId = goblin.DamageId;
+			goblinHistory.Alive = goblin.Alive;
+			goblinHistory.DeathTimestamp = goblin.DeathTimestamp;
+			goblinHistory.LastAttackTimestamp = goblin.LastAttackTimestamp;
+			goblinHistory.AttackPending = goblin.AttackPending;
+			goblinHistory.PlayerInAttackRange = goblin.PlayerInAttackRange;
+			
+			newHistory.GoblinList.Add(goblinHistory);
 		}
 
 		newHistory.SpawnPoint = mainNode.GetNode<Position2D>("StartPosition").Position;
@@ -263,6 +308,8 @@ public class Level1 : Node
 	
 	public void ProcessHourglass()
 	{
+		var now = Time.GetUnixTimeFromSystem();
+		
 		if (LevelHistory.Count != HISTORY_MAX_RECORDS)
 			return;
 		
@@ -272,6 +319,7 @@ public class Level1 : Node
 		var dryadsNode = GetNode("Dryads");
 		var dryadFiresNode = GetNode("DryadFires");
 		var demonsNode = GetNode("Demons");
+		var goblinsNode = GetNode("Goblins");
 		
 		var levelHistory = LevelHistory.Peek();
 		LevelHistory.Clear();
@@ -303,6 +351,16 @@ public class Level1 : Node
 			{
 				demonsNode.RemoveChild(demon);
 				demon.QueueFree();
+			}
+		}
+
+		foreach (var c in goblinsNode.GetChildren())
+		{
+			var goblin = c as Goblin;
+			if (goblin != null)
+			{
+				goblinsNode.RemoveChild(goblin);
+				goblin.QueueFree();
 			}
 		}
 		
@@ -386,6 +444,7 @@ public class Level1 : Node
 			newDemon.InPlayerSwordRange = demonHistory.InPlayerSwordRange;
 			newDemon.Target = playerCharNode;
 			newDemon.DamageId = demonHistory.DamageId;
+			newDemon.Alive = demonHistory.Alive;
 			newDemon.LastAttackTimestamp = demonHistory.LastAttackTimestamp;
 			newDemon.AttackPending = demonHistory.AttackPending;
 			newDemon.PlayerInSwipeRange = demonHistory.PlayerInSwipeRange;
@@ -400,12 +459,59 @@ public class Level1 : Node
 						newDemon.Health = LargeDemon.MAX_HEALTH;
 					if (newDemon.Health <= 0)
 					{
+						var deathSound = mainNode.GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("DemonDeath");
+						deathSound.Position = newDemon.Position;
+						deathSound.Play();
+						
+						newDemon.Alive = false;
 						newDemon.QueueFree();
 					}
 				}
 			}
 			
 			demonsNode.AddChild(newDemon);
+		}
+		
+		foreach (var goblinHistory in levelHistory.GoblinList)
+		{
+			Goblin newGoblin = (Goblin) GoblinScene.Instance();
+			var sprite = newGoblin.GetNode<AnimatedSprite>("AnimatedSprite");
+			
+			sprite.FlipH = goblinHistory.FacingLeft;
+			newGoblin.Health = goblinHistory.Health;
+			newGoblin.Position = goblinHistory.Position;
+			newGoblin.InPlayerSwordRange = goblinHistory.InPlayerSwordRange;
+			newGoblin.Target = playerCharNode;
+			newGoblin.DamageId = goblinHistory.DamageId;
+			newGoblin.Alive = goblinHistory.Alive;
+			newGoblin.DeathTimestamp = goblinHistory.DeathTimestamp;
+			newGoblin.LastAttackTimestamp = goblinHistory.LastAttackTimestamp;
+			newGoblin.AttackPending = goblinHistory.AttackPending;
+			newGoblin.PlayerInAttackRange = goblinHistory.PlayerInAttackRange;
+			
+			foreach (var report in DivineDamageHistory)
+			{
+				if (!report.PlayerIsTarget && report.Who == newGoblin.DamageId
+					&& report.Timestamp > levelHistory.Timestamp)
+				{
+					newGoblin.Health -= report.Amount;
+					if (newGoblin.Health > Goblin.MAX_HEALTH)
+						newGoblin.Health = Goblin.MAX_HEALTH;
+					if (newGoblin.Health <= 0)
+					{
+//						var deathSound = mainNode.GetNode("MediaNode")
+//							.GetNode<AudioStreamPlayer2D>("GoblinDeath");
+//						deathSound.Position = newGoblin.Position;
+//						deathSound.Play();
+						
+						newGoblin.Alive = false;
+						newGoblin.DeathTimestamp = now;
+					}
+				}
+			}
+			
+			goblinsNode.AddChild(newGoblin);
 		}
 
 		mainNode.GetNode<Position2D>("StartPosition").Position = levelHistory.SpawnPoint;
@@ -426,8 +532,10 @@ public class Level1 : Node
 	public void ProcessScales()
 	{
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
+		var mainNode = GetParent();
 		var dryadsNode = GetNode("Dryads");
 		var demonsNode = GetNode("Demons");
+		var goblinsNode = GetNode("Goblins");
 		var now = Time.GetUnixTimeFromSystem();
 		
 		// assume expired ones have been pruned every timestep
@@ -574,18 +682,101 @@ public class Level1 : Node
 						hitSound.Play();
 						if (demon.Health <= 0)
 						{
-//							var deathSound = GetParent().GetNode("MediaNode")
-//								.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
-//							deathSound.Position = dryad.Position;
-//							deathSound.Play();
+							var deathSound = mainNode.GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("DemonDeath");
+							deathSound.Position = demon.Position;
+							deathSound.Play();
+					
+							demon.Alive = false;
 							demon.QueueFree();
 						}
 						else
 						{
-//							var onHitSound = GetParent().GetNode("MediaNode")
-//								.GetNode<AudioStreamPlayer2D>("DryadAttackedSound");
-//							onHitSound.Position = dryad.Position;
-//							onHitSound.Play();
+							var onHitSound = GetParent().GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
+							onHitSound.Position = demon.Position;
+							onHitSound.Play();
+						}
+					}
+				}
+			}
+			
+			foreach (var d in goblinsNode.GetChildren())
+			{
+				var goblin = d as Goblin;
+				if (d == null)
+					continue;
+				
+				if (goblin.DamageId == damageReport.Who)
+				{
+					int halfAmount = damageReport.Amount / 2;
+					
+					goblin.LastAffectedTimestamp = now;
+					if (damageReport.FromPlayer)
+					{
+						playerCharNode.Health -= halfAmount;
+						goblin.Health += halfAmount;
+						if (goblin.Health > Goblin.MAX_HEALTH)
+							goblin.Health = Goblin.MAX_HEALTH;
+							
+						var divineReport1 = new DivineDamageReport();
+						divineReport1.Who = 0;
+						divineReport1.PlayerIsTarget = true;
+						divineReport1.Amount = halfAmount;
+						divineReport1.Timestamp = now;
+						DivineDamageHistory.Add(divineReport1);
+
+						var divineReport2 = new DivineDamageReport();
+						divineReport2.Who = goblin.DamageId;
+						divineReport2.PlayerIsTarget = false;
+						divineReport2.Amount = -halfAmount;
+						divineReport2.Timestamp = now;
+						DivineDamageHistory.Add(divineReport2);
+						
+						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Play();
+						if (playerCharNode.Health < -100)
+							playerCharNode.Health = -100;
+					}
+					else
+					{
+						goblin.Health -= halfAmount;
+						playerCharNode.Health += halfAmount;
+						if (playerCharNode.Health > MAX_HEALTH)
+							playerCharNode.Health = MAX_HEALTH;
+							
+						var divineReport1 = new DivineDamageReport();
+						divineReport1.Who = 0;
+						divineReport1.PlayerIsTarget = true;
+						divineReport1.Amount = -halfAmount;
+						divineReport1.Timestamp = now;
+						DivineDamageHistory.Add(divineReport1);
+
+						var divineReport2 = new DivineDamageReport();
+						divineReport2.Who = goblin.DamageId;
+						divineReport2.PlayerIsTarget = false;
+						divineReport2.Amount = halfAmount;
+						divineReport2.Timestamp = now;
+						DivineDamageHistory.Add(divineReport2);
+						
+						var hitSound = playerCharNode.GetNode<AudioStreamPlayer2D>("HitSound");
+						hitSound.Play();
+						if (goblin.Health <= 0)
+						{
+//							var deathSound = mainNode.GetNode("MediaNode")
+//								.GetNode<AudioStreamPlayer2D>("DemonDeath");
+//							deathSound.Position = goblin.Position;
+//							deathSound.Play();
+					
+							goblin.Alive = false;
+							goblin.DeathTimestamp = now;
+						}
+						else
+						{
+							var onHitSound = GetParent().GetNode("MediaNode")
+								.GetNode<AudioStreamPlayer2D>("DemonIsHurt");
+							onHitSound.Position = goblin.Position;
+							onHitSound.Play();
 						}
 					}
 				}
