@@ -330,6 +330,9 @@ public class PlayerChar : KinematicBody2D
 
 	private void ProcessAttack(Dryad dryad)
 	{
+		if (!dryad.IsHostile)
+			return;
+		
 		var now = Time.GetUnixTimeFromSystem();
 		var levelNode = GetParent<Level1>();
 		var mainNode = levelNode.GetParent();
@@ -349,7 +352,24 @@ public class PlayerChar : KinematicBody2D
 					.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
 				deathSound.Position = dryad.Position;
 				deathSound.Play();
-				dryad.QueueFree();
+				
+				if (dryad.IsBoss && !levelNode.ShownStory5)
+				{
+					var hud = mainNode.GetNode<HUD>("HUD");
+					
+					List<String> lines = new List<string>();
+					lines.Add("Zealot. You don't know what you're doing.");
+					lines.Add("Your justice is no one's justice.");
+					lines.Add("Did the high priest send you?");
+					hud.ShowDialog(lines);
+					levelNode.ShownStory5 = true;
+					levelNode.GetNode<Timer>("EndGameTimer").Start();
+					levelNode.GameOver = true;
+				}
+				else
+				{
+					dryad.QueueFree();
+				}
 			}
 			else
 			{

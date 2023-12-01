@@ -11,20 +11,26 @@ public enum DryadState
 public class Dryad : KinematicBody2D
 {
 	public static int MOVE_SPEED = 100;
+	public static int MOVE_SPEED_BOSS = 140;
 	public static int MAX_RANGE = 120;
 	public static int MIN_RANGE = 80;
 	public static float POSITION_SPREAD = 70.0f;
 	public static float FIRE_POSITION_OFFSET = 25.0f;
 	public static int GRAVITY = 600;
 	public static float LOS = 200;
+	public static float LOS_BOSS = 4000;
 	public static int NUM_FIRES = 3;
+	public static int NUM_FIRES_BOSS = 9;
 	public static int HP_BAR_WIDTH = 12;
 	public static double HIDE_HP_BAR_SECS = 4;
 	public static int DEFAULT_MAX_HEALTH = 100;
 	public static double DRYAD_CAST_DURATION_SECS = 1.5;
 	public static double DRYAD_INNER_COOLDOWN_DURATION_SECS = 3;	// After cast
+	public static double DRYAD_BOSS_INNER_COOLDOWN_DURATION_SECS = 1;	// After cast
 	public static double DRYAD_FULL_COOLDOWN_DURATION_SECS =
 		DRYAD_CAST_DURATION_SECS + DRYAD_INNER_COOLDOWN_DURATION_SECS;	// Including cast
+	public static double DRYAD_BOSS_FULL_COOLDOWN_DURATION_SECS =
+		DRYAD_CAST_DURATION_SECS + DRYAD_BOSS_INNER_COOLDOWN_DURATION_SECS;	// Including cast
 	public static double DRYAD_FINISH_ATTACK_DURATION_SECS = 0.6;
 	
 	[Export]
@@ -32,6 +38,12 @@ public class Dryad : KinematicBody2D
 	
 	[Export]
 	public int Health = DEFAULT_MAX_HEALTH;
+	
+	[Export]
+	public bool IsBoss = false;
+	
+	[Export]
+	public bool IsHostile = true;
 	
 	[Export]
 	public PlayerChar Target = null;
@@ -60,6 +72,8 @@ public class Dryad : KinematicBody2D
 	public override void _Ready()
 	{
 		Target = GetParent().GetParent().GetNode<PlayerChar>("PlayerChar");
+		if (IsBoss)
+			GetNode<AnimatedSprite>("AnimatedSprite").Animation = "boss-idle";
 	}
 	
 	public bool AgainstRightWall()
@@ -96,8 +110,13 @@ public class Dryad : KinematicBody2D
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
-		sprite.Animation = "attack";
-		for (int i = 0; i < NUM_FIRES; ++i)
+			
+		if (IsBoss)
+			sprite.Animation = "boss-attack";
+		else
+			sprite.Animation = "attack";
+		int numFires = IsBoss ? NUM_FIRES_BOSS : NUM_FIRES;
+		for (int i = 0; i < numFires; ++i)
 		{
 			// create fire
 			DryadFire fireInstance = (DryadFire) levelNode.FireScene.Instance();
@@ -119,9 +138,12 @@ public class Dryad : KinematicBody2D
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
 			
-		if (sprite.Animation == "attack")
+		if (sprite.Animation == "attack" || sprite.Animation == "boss-attack")
 		{
-			sprite.Animation = "idle";
+			if (IsBoss)
+				sprite.Animation = "boss-idle";
+			else
+				sprite.Animation = "idle";
 		}
 	}
 	
@@ -137,24 +159,49 @@ public class Dryad : KinematicBody2D
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
+			
+		if ( !IsHostile )
+		{
+			sprite.FlipH = directionToPlayer < 0;
+			
+			if (Grounded)
+				Velocity.y = 0;
+			else
+				Velocity.y += GRAVITY * delta; // Gravity
+
+			Velocity = MoveAndSlide(Velocity, Vector2.Up);
+					
+			if (IsOnFloor())
+				Grounded = true;
+			return;
+		}
+			
 		float absoluteDistance = Math.Abs(directionToPlayer);
 		
-		if (absoluteDistance > LOS)
+		var los = IsBoss ? LOS_BOSS : LOS;
+		if (absoluteDistance > los)
 			return;
 		
+		var moveSpeed = IsBoss ? MOVE_SPEED_BOSS : MOVE_SPEED;
 		if (absoluteDistance > MAX_RANGE)
 		{
 			if (BlockedByWall(directionToPlayer))
 			{
 				sprite.FlipH = directionToPlayer > 0;
-				sprite.Animation = "idle";
+				if (IsBoss)
+					sprite.Animation = "boss-idle";
+				else
+					sprite.Animation = "idle";
 			}
 			else
 			{
 				sprite.FlipH = directionToPlayer < 0;
-				sprite.Animation = "walking";
+				if (IsBoss)
+					sprite.Animation = "boss-walking";
+				else
+					sprite.Animation = "walking";
 			}
-			Velocity.x = Math.Sign(directionToPlayer) * MOVE_SPEED;
+			Velocity.x = Math.Sign(directionToPlayer) * moveSpeed;
 		}
 		else
 		{
@@ -163,14 +210,20 @@ public class Dryad : KinematicBody2D
 				if (BlockedByWall(-directionToPlayer))
 				{
 					sprite.FlipH = directionToPlayer < 0;
-					sprite.Animation = "idle";
+					if (IsBoss)
+						sprite.Animation = "boss-idle";
+					else
+						sprite.Animation = "idle";
 				}
 				else
 				{
 					sprite.FlipH = directionToPlayer > 0;
-					sprite.Animation = "walking";	
+					if (IsBoss)
+						sprite.Animation = "boss-walking";
+					else
+						sprite.Animation = "walking";
 				}
-				Velocity.x = -Math.Sign(directionToPlayer) * MOVE_SPEED;
+				Velocity.x = -Math.Sign(directionToPlayer) * moveSpeed;
 			}
 			else
 			{
@@ -178,18 +231,33 @@ public class Dryad : KinematicBody2D
 				Velocity.x = 0;
 			}
 			
-			if (LastStartCastTimestamp + DRYAD_FULL_COOLDOWN_DURATION_SECS < Time.GetUnixTimeFromSystem() )
+			double cooldownSecs = IsBoss
+				? DRYAD_BOSS_FULL_COOLDOWN_DURATION_SECS
+				: DRYAD_FULL_COOLDOWN_DURATION_SECS;
+				
+			if (LastStartCastTimestamp + cooldownSecs < Time.GetUnixTimeFromSystem() )
 			{
 				LastStartCastTimestamp = Time.GetUnixTimeFromSystem();
 				State = DryadState.Casting;
-				sprite.Animation = "casting";
+				if (IsBoss)
+					sprite.Animation = "boss-casting";
+				else
+					sprite.Animation = "casting";
 			}
 			else if (State == DryadState.FinishingCast)
 			{
-				sprite.Animation = "attack";
+				if (IsBoss)
+					sprite.Animation = "boss-attack";
+				else
+					sprite.Animation = "attack";
 			}
 			else
-				sprite.Animation = "idle";
+			{
+				if (IsBoss)
+					sprite.Animation = "boss-idle";
+				else
+					sprite.Animation = "idle";
+			}
 		} 
 		
 		if (Grounded)

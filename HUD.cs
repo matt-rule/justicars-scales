@@ -65,15 +65,15 @@ public class HUD : CanvasLayer
 		GetTree().Paused = true;
 	}
 
-	public async void ShowGameOver()
-	{
-		ShowDialog("Game Over");
-
-		var messageTimer = GetNode<Timer>("MessageTimer");
-		await ToSignal(messageTimer, "timeout");
-
-		GetNode<Panel>("InfoPanel").Show();
-	}
+//	public async void ShowGameOver()
+//	{
+//		ShowDialog("Game Over");
+//
+//		var messageTimer = GetNode<Timer>("MessageTimer");
+//		await ToSignal(messageTimer, "timeout");
+//
+//		GetNode<Panel>("InfoPanel").Show();
+//	}
 	
 	public void ShowGameMenu()
 	{
@@ -88,10 +88,14 @@ public class HUD : CanvasLayer
 			// TODO: make sure the next lines are necessary
 			GetNode<Panel>("InfoPanel").Hide();
 			EmitSignal(nameof(StartGame));
-			var main = GetParent();
-			main.GetNode<Level1>("Level1").CallDeferred("NewGame");
 			// End of TODO
 			GetTree().Paused = false;
+			var main = GetParent();
+			var level = main.GetNode<Level1>("Level1");
+			var hud = main.GetNode<HUD>("HUD");
+			
+			if (level.GameOver)
+				hud.GetNode<Label>("VictoryLabel").Show();
 		}
 		else
 		{
@@ -133,6 +137,8 @@ public class HUD : CanvasLayer
 					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
+					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
+					GetNode<Label>("VictoryLabel").Hide();
 					GetNode<TextureRect>("MainMenuLogo").Show();
 					GetNode<Label>("MainMenuLabel1").Show();
 					GetNode<Label>("MainMenuLabel2").Show();

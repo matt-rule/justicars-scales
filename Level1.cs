@@ -19,6 +19,8 @@ public class PlayerHistoricalState
 public class DryadHistoricalState
 {
 	public bool FacingLeft;
+	public bool IsBoss;
+	public bool IsHostile;
 	public int MaxHealth;
 	public int Health;
 	public Vector2 Position;
@@ -35,12 +37,15 @@ public class DryadHistoricalState
 public class DryadFireHistoricalState
 {
 	public Vector2 Position;
+	public uint DamageId;
+	public bool FromBoss;
 	public double CreatedTimestamp;
 }
 
 public class DemonHistoricalState
 {
 	public bool FacingLeft;
+	public int MaxHealth;
 	public int Health;
 	public Vector2 Position;
 	public Vector2 Velocity;
@@ -100,9 +105,6 @@ public class DivineDamageReport
 
 public class Level1 : Node
 {
-//	const String STORY_TEXT_1 = "\"Pagans!\" the head priest was yelling hysterically at me.  \"Drive them from these lands!\"";
-//	const String STORY_TEXT_2 = "But so far I have yet to see a single human.  Instead, my mission has led me deeper into the forest.  I am no longer sure of my way.";
-	
 	public const int HISTORY_MAX_RECORDS = 10;
 	public const int HISTORY_SAMPLES_PER_SECOND = 2;
 	
@@ -110,7 +112,13 @@ public class Level1 : Node
 	
 	public const float LANTERN_DISTANCE = 30f;
 	public const float SPAWN_OFFSET_Y = -20f;
-	public bool ShownStory = false;
+	public bool ShownStory1 = false;
+	public bool ShownStory2 = false;
+	public bool ShownStory3 = false;
+	public bool ShownStory4 = false;
+	public bool ShownStory5 = false;
+	
+	public bool GameOver = false;
 	
 	public const int MAX_HEALTH = 100;
 	
@@ -217,6 +225,8 @@ public class Level1 : Node
 			
 			var dryadHistory = new DryadHistoricalState();
 			dryadHistory.FacingLeft = sprite.FlipH;
+			dryadHistory.IsHostile = dryad.IsHostile;
+			dryadHistory.IsBoss = dryad.IsBoss;
 			dryadHistory.MaxHealth = dryad.MaxHealth;
 			dryadHistory.Health = dryad.Health;
 			dryadHistory.Velocity = dryad.Velocity;
@@ -232,11 +242,13 @@ public class Level1 : Node
 		foreach (var c in dryadFiresNode.GetChildren())
 		{
 			DryadFire dryadFire = c as DryadFire;
-			if (dryadFire == null)
+			if (dryadFire == null || dryadFire.Boomed)
 				continue;
 				
 			var dryadFireHistory = new DryadFireHistoricalState();
 			dryadFireHistory.Position = dryadFire.Position;
+			dryadFireHistory.DamageId = dryadFire.DamageId;
+			dryadFireHistory.FromBoss = dryadFire.FromBoss;
 			dryadFireHistory.CreatedTimestamp = dryadFire.CreatedTimestamp;
 			newHistory.DryadFireList.Add(dryadFireHistory);
 		}
@@ -251,6 +263,7 @@ public class Level1 : Node
 			
 			var demonHistory = new DemonHistoricalState();
 			demonHistory.FacingLeft = sprite.FlipH;
+			demonHistory.MaxHealth = demon.Health;
 			demonHistory.Health = demon.Health;
 			demonHistory.Grounded = demon.Grounded;
 			demonHistory.Velocity = demon.Velocity;
@@ -396,6 +409,8 @@ public class Level1 : Node
 			var sprite = newDryad.GetNode<AnimatedSprite>("AnimatedSprite");
 			
 			sprite.FlipH = dryadHistory.FacingLeft;
+			newDryad.IsHostile = dryadHistory.IsHostile;
+			newDryad.IsBoss = dryadHistory.IsBoss;
 			newDryad.MaxHealth = dryadHistory.MaxHealth;
 			newDryad.Health = dryadHistory.Health;
 			newDryad.Velocity = dryadHistory.Velocity;
@@ -417,7 +432,23 @@ public class Level1 : Node
 						newDryad.Health = newDryad.MaxHealth;
 					if (newDryad.Health <= 0)
 					{
-						newDryad.QueueFree();
+						if (newDryad.IsBoss && !ShownStory5)
+						{
+							var hud = mainNode.GetNode<HUD>("HUD");
+							
+							List<String> lines = new List<string>();
+							lines.Add("Zealot. You don't know what you're doing.");
+							lines.Add("Your justice is no one's justice.");
+							lines.Add("Did the high priest send you?");
+							hud.ShowDialog(lines);
+							ShownStory5 = true;
+							GetNode<Timer>("EndGameTimer").Start();
+							GameOver = true;
+						}
+						else
+						{
+							newDryad.QueueFree();
+						}
 					}
 				}
 			}
@@ -433,6 +464,8 @@ public class Level1 : Node
 				
 			newFire.Position = fireHistory.Position;
 			newFire.CreatedTimestamp = fireHistory.CreatedTimestamp + timeDiff;
+			newFire.DamageId = fireHistory.DamageId;
+			newFire.FromBoss = fireHistory.FromBoss;
 			newFire.Target = playerCharNode;
 			
 			dryadFiresNode.AddChild(newFire);
@@ -444,6 +477,7 @@ public class Level1 : Node
 			var sprite = newDemon.GetNode<AnimatedSprite>("AnimatedSprite");
 			
 			sprite.FlipH = demonHistory.FacingLeft;
+			newDemon.MaxHealth = demonHistory.MaxHealth;
 			newDemon.Health = demonHistory.Health;
 			newDemon.Velocity = demonHistory.Velocity;
 			newDemon.Grounded = demonHistory.Grounded;
@@ -463,8 +497,8 @@ public class Level1 : Node
 					&& report.Timestamp > levelHistory.Timestamp)
 				{
 					newDemon.Health -= report.Amount;
-					if (newDemon.Health > LargeDemon.MAX_HEALTH)
-						newDemon.Health = LargeDemon.MAX_HEALTH;
+					if (newDemon.Health > newDemon.MaxHealth)
+						newDemon.Health = newDemon.MaxHealth;
 					if (newDemon.Health <= 0)
 					{
 						var deathSound = mediaNode
@@ -620,7 +654,24 @@ public class Level1 : Node
 								.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
 							deathSound.Position = dryad.Position;
 							deathSound.Play();
-							dryad.QueueFree();
+				
+							if (dryad.IsBoss && !ShownStory5)
+							{
+								var hud = mainNode.GetNode<HUD>("HUD");
+								
+								List<String> lines = new List<string>();
+								lines.Add("Zealot. You don't know what you're doing.");
+								lines.Add("Your justice is no one's justice.");
+								lines.Add("Did the high priest send you?");
+								hud.ShowDialog(lines);
+								ShownStory5 = true;
+								GetNode<Timer>("EndGameTimer").Start();
+								GameOver = true;
+							}
+							else
+							{
+								dryad.QueueFree();
+							}
 						}
 						else
 						{
@@ -648,8 +699,8 @@ public class Level1 : Node
 					{
 						playerCharNode.Health -= halfAmount;
 						demon.Health += halfAmount;
-						if (demon.Health > LargeDemon.MAX_HEALTH)
-							demon.Health = LargeDemon.MAX_HEALTH;
+						if (demon.Health > demon.MaxHealth)
+							demon.Health = demon.MaxHealth;
 							
 						var divineReport1 = new DivineDamageReport();
 						divineReport1.Who = 0;
@@ -804,8 +855,10 @@ public class Level1 : Node
 	public override void _PhysicsProcess(float delta)
 	{
 		bool checkedQueue = false;
-		while (DamageHistory.Count != 0 && !checkedQueue)
+		int loop_count = 0;
+		while (loop_count < 10 && DamageHistory.Count != 0 && !checkedQueue)
 		{
+			loop_count++;
 			var report = DamageHistory.Peek();
 			if (report.Timestamp + DAMAGE_REPORT_LIFESPAN_SECS < Time.GetUnixTimeFromSystem())
 				DamageHistory.Dequeue();
@@ -817,6 +870,9 @@ public class Level1 : Node
 	// TODO: Consider moving a lot of this code to _PhysicsProcess
 	public override void _Process(float delta)
 	{
+		var mainNode = GetParent<Main>();
+		var now = Time.GetUnixTimeFromSystem();
+		
 		if (Input.IsActionJustPressed("show_menu"))
 		{
 			GetTree().Paused = true;
@@ -828,12 +884,85 @@ public class Level1 : Node
 		// Reset player char if it goes below a certain Y coordinate
 		//var startPosition = GetNode<Position2D>("StartPosition");
 		if (playerCharNode.Position.y > PlayerChar.MIN_Y_COORD)
-			GetParent<Main>().ProcessPlayerDeath();
+			mainNode.ProcessPlayerDeath();
 		
 		// Check distance to lantern
-		var hud = GetParent().GetNode<HUD>("HUD");
-		var mediaNode = GetParent().GetNode<Node>("MediaNode");
-		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
+		var hud = mainNode.GetNode<HUD>("HUD");
+		var mediaNode = mainNode.GetNode<Node>("MediaNode");
+		var spawnPoint = mainNode.GetNode<Position2D>("StartPosition");
+		
+		foreach (var c in GetNode("Dryads").GetChildren())
+		{
+			Dryad dryad = c as Dryad;
+			if (dryad == null)
+				continue;
+				
+			if (dryad.Position.y > PlayerChar.MIN_Y_COORD)
+			{
+				var deathSound = mediaNode
+					.GetNode<AudioStreamPlayer2D>("DryadDeathSound");
+				deathSound.Position = dryad.Position;
+				deathSound.Play();
+				
+				if (dryad.IsBoss && !ShownStory5)
+				{
+					List<String> lines = new List<string>();
+					lines.Add("Zealot. You don't know what you're doing.");
+					lines.Add("Your justice is no one's justice.");
+					lines.Add("Did the high priest send you?");
+					hud.ShowDialog(lines);
+					ShownStory5 = true;
+					GetNode<Timer>("EndGameTimer").Start();
+					GameOver = true;
+				}
+				else
+				{
+					dryad.QueueFree();
+				}
+			}	
+		}
+			
+		foreach (var c in GetNode("Demons").GetChildren())
+		{
+			LargeDemon demon = c as LargeDemon;
+			if (demon == null)
+				continue;
+				
+			if (!demon.Alive)
+				continue;
+				
+			if (demon.Position.y > PlayerChar.MIN_Y_COORD)
+			{
+				var deathSound = mainNode.GetNode("MediaNode")
+					.GetNode<AudioStreamPlayer2D>("DemonDeath");
+				deathSound.Position = demon.Position;
+				deathSound.Play();
+
+				demon.Alive = false;
+				demon.DeathTimestamp = now;
+			}
+		}
+			
+		foreach (var c in GetNode("Goblins").GetChildren())
+		{
+			Goblin goblin = c as Goblin;
+			if (goblin == null)
+				continue;
+			
+			if (!goblin.Alive)
+				continue;
+			
+			if (goblin.Position.y > PlayerChar.MIN_Y_COORD)
+			{
+				var deathSound = mediaNode
+					.GetNode<AudioStreamPlayer2D>("GoblinDeathSound");
+				deathSound.Position = goblin.Position;
+				deathSound.Play();
+				
+				goblin.Alive = false;
+				goblin.DeathTimestamp = now;
+			}
+		}
 		
 		bool showHint = false;
 		bool touchingAnyLantern = false;
@@ -853,7 +982,7 @@ public class Level1 : Node
 			if (lantern.Text != null && lantern.Text != "")
 			{
 				showHint = true;
-				hud.ShowHint(lantern.Text);	
+				hud.ShowHint(lantern.Text);
 			}
 			if (!PlayerWasTouchingLantern)
 			{
@@ -879,27 +1008,180 @@ public class Level1 : Node
 		
 		if (!showHint)
 			hud.HideHint();
+	}
+	
+	private void StoryText1Activated(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
 		
-//		if (!ShownStory && (playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
-//		{
-//			List<String> lines = new List<string>();
-//			lines.Add(STORY_TEXT_1);
-//			lines.Add(STORY_TEXT_2);
-//			hud.ShowDialog(lines);
-//			ShownStory = true;
-//		}
+		var mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
 		
-		//var infoPanel = GetNode<HUD>("HUD").GetNode<Panel>("MiniInfoPanel");
-//		if ((playerCharNode.Position - lantern.Position).Length() < LANTERN_DISTANCE)
-//		{
-//
-////			infoPanel.GetNode<MarginContainer>("MarginContainer").GetNode<Label>("InfoLabel")
-////			.Text = LANTERN_TEXT_1;
-////			infoPanel.Show();
-//		}
-//		else
-//		{
-////			infoPanel.Hide();
-//		}
+		if (!ShownStory1)
+		{
+			const String STORY_TEXT_1_1 = "Why are you here? Are you lost?";
+			const String STORY_TEXT_1_2 = "Or perhaps, carrying out some mission?";
+	
+			List<String> lines = new List<string>();
+			lines.Add(STORY_TEXT_1_1);
+			lines.Add(STORY_TEXT_1_2);
+			hud.ShowDialog(lines);
+			ShownStory1 = true;
+		}
+	}
+
+	private void MoveBossTrigger1To2(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
+			
+		var StoryNode = GetNode<Position2D>("BossStoryLocation2");
+		
+		var DryadsNode = GetNode("Dryads");
+		foreach (var c in DryadsNode.GetChildren())
+		{
+			var dryad = c as Dryad;
+			if (dryad == null)
+				continue;
+			if (dryad.IsBoss)
+			{
+				dryad.Position = StoryNode.Position;
+				dryad.Grounded = false;
+			}
+		}
+	}
+
+	private void StoryText2Activated(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
+			
+		var mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
+		
+		if (!ShownStory2)
+		{
+			const String STORY_TEXT_2_1 = "Having fun killing the forest inhabitants?";
+			const String STORY_TEXT_2_2 = "I don't care what mission you've been given.";
+			const String STORY_TEXT_2_3 = "Your scales of \"justice\" are a hypocrisy. Your justice is yours alone.";
+	
+			List<String> lines = new List<string>();
+			lines.Add(STORY_TEXT_2_1);
+			lines.Add(STORY_TEXT_2_2);
+			lines.Add(STORY_TEXT_2_3);
+			hud.ShowDialog(lines);
+			ShownStory2 = true;
+		}
+	}
+
+	private void MoveBossTrigger2To3(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
+			
+		var StoryNode = GetNode<Position2D>("BossStoryLocation3");
+		
+		var DryadsNode = GetNode("Dryads");
+		foreach (var c in DryadsNode.GetChildren())
+		{
+			var dryad = c as Dryad;
+			if (dryad == null)
+				continue;
+			if (dryad.IsBoss)
+			{
+				dryad.Position = StoryNode.Position;
+				dryad.Grounded = false;
+			}
+		}
+	}
+
+	private void StoryText3Activated(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
+	
+		var mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
+		
+		if (!ShownStory3)
+		{
+			const String STORY_TEXT_3_1 = "Enough of your justice.";
+		
+			List<String> lines = new List<string>();
+			lines.Add(STORY_TEXT_3_1);
+			hud.ShowDialog(lines);
+			ShownStory3 = true;
+		
+			MoveBossTrigger2To3(body);
+		}
+	}
+
+	private void StoryText4Activated(object body)
+	{
+		if (!(body is PlayerChar))
+			return;
+			
+		const String STORY_TEXT_4_1 = "It is time to enact my own!";
+	
+		var mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
+		
+		if (!ShownStory4)
+		{
+			List<String> lines = new List<string>();
+			lines.Add(STORY_TEXT_4_1);
+			hud.ShowDialog(lines);
+			ShownStory4 = true;
+		}
+		
+		var DryadsNode = GetNode("Dryads");
+		foreach (var c in DryadsNode.GetChildren())
+		{
+			var dryad = c as Dryad;
+			if (dryad == null)
+				continue;
+			if (dryad.IsBoss)
+			{
+				dryad.IsHostile = true;
+			}
+		}
+	}
+	
+	private void HideStory(object body)
+	{
+		var mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
+		
+		hud.GetNode<Panel>("InfoPanel").Hide();
+	}
+	
+	private void EndGameTimerTimeout()
+	{
+		Main mainNode = GetParent<Main>();
+		var hud = mainNode.GetNode<HUD>("HUD");
+
+		mainNode.GetNode<Position2D>("StartPosition").Position = new Vector2(-984, 148);
+		mainNode.GetNode<Camera2D>("MainMenuCam").Current = true;
+		mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
+		mainNode.GetNode("Level1").QueueFree();
+		mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
+		mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
+		hud.GetNode<Label>("VictoryLabel").Hide();
+		hud.GetNode<TextureRect>("MainMenuLogo").Show();
+		hud.GetNode<Label>("MainMenuLabel1").Show();
+		hud.GetNode<Label>("MainMenuLabel2").Show();
+		hud.GetNode<Panel>("MainMenuPanel").Show();
+		hud.GetNode<Panel>("RestartDialogPanel").Hide();
+		hud.GetNode<Node2D>("HPBar").Hide();
+		hud.GetNode<TextureRect>("HourglassIcon").Hide();
+		hud.GetNode<TextureRect>("ScalesIcon").Hide();
+		hud.GetNode<AnimatedSprite>("ItemOverlay").Hide();
+		hud.GetNode<Panel>("MiniInfoPanel").Hide();
+		hud.GetNode<Panel>("InfoPanel").Hide();
+		hud.GetNode<Panel>("PauseMenuPanel").Hide();
+		hud.GetNode<ColorRect>("DeathScreen").Hide();
+		GetTree().Paused = false;
+		GameOver = false;
 	}
 }

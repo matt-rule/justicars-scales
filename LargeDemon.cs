@@ -8,7 +8,7 @@ public class LargeDemon : KinematicBody2D
 	public static int MIN_RANGE = 20;
 	public static float LOS = 100;
 	public static int GRAVITY = 900;
-	public const int MAX_HEALTH = 120;
+	public const int DEFAULT_MAX_HEALTH = 120;
 	public static double HIDE_HP_BAR_SECS = 4;
 	public static int HP_BAR_WIDTH = 20;
 	public static double ATTACK_DELAY = 0.2;
@@ -29,7 +29,10 @@ public class LargeDemon : KinematicBody2D
 	public bool Grounded = false;
 
 	[Export]
-	public int Health = MAX_HEALTH;
+	public int MaxHealth = DEFAULT_MAX_HEALTH;
+	
+	[Export]
+	public int Health = DEFAULT_MAX_HEALTH;
 	
 	[Export]
 	public PlayerChar Target = null;
@@ -320,7 +323,7 @@ public class LargeDemon : KinematicBody2D
 		bool visible = LastAffectedTimestamp + HIDE_HP_BAR_SECS > Time.GetUnixTimeFromSystem();
 		var rectRemaining = GetNode<ColorRect>("HPRectRemaining");
 		var rectBg = GetNode<ColorRect>("HPRectBg");
-		rectRemaining.RectSize = new Vector2((float)Health / MAX_HEALTH * HP_BAR_WIDTH, 2);
+		rectRemaining.RectSize = new Vector2((float)Health / MaxHealth * HP_BAR_WIDTH, 2);
 		rectRemaining.Visible = visible;
 		rectBg.Visible = visible;
 	}

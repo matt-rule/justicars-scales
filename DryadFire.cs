@@ -4,14 +4,14 @@ using System;
 public class DryadFire : Area2D
 {
 	public const int FIREBALL_DAMAGE = 80;
+	public const int FIREBALL_DAMAGE_BOSS = 120;
 	
 	[Export]
 	public PlayerChar Target = null;
 	
-	[Export]
-	public int Health = 100;
-	
 	public uint DamageId = 0;	// Identifies Dryad
+	
+	public bool FromBoss = false;
 	
 	public bool Boomed = false;
 	
@@ -34,10 +34,11 @@ public class DryadFire : Area2D
 		AudioStreamPlayer2D soundPlayer = mainNode
 			.GetNode<Node>("MediaNode")
 			.GetNode<AudioStreamPlayer2D>("FireSound");
-		if (Target.EffectsInRange.Contains(this))
+		if (Target.EffectsInRange.Contains(this) && !levelNode.GameOver)
 		{
 			var prevTargetHealth = Target.Health;
-			Target.Health -= FIREBALL_DAMAGE;
+			int fireBallDamage = FromBoss ? FIREBALL_DAMAGE_BOSS : FIREBALL_DAMAGE;
+			Target.Health -= fireBallDamage;
 			if (Target.Health < -100)
 				Target.Health = -100;
 		

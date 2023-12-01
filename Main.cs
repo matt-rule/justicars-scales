@@ -41,6 +41,9 @@ public class Main : Node
 		Level = GetNode<Level1>("Level1");
 		ScreenSize = Level.GetNode<PlayerChar>("PlayerChar").GetViewportRect().Size;
 		
+		GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Stop();
+		GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Play();
+					
 		hud.GetNode<TextureRect>("MainMenuLogo").Hide();
 		hud.GetNode<Label>("MainMenuLabel1").Hide();
 		hud.GetNode<Label>("MainMenuLabel2").Hide();
@@ -57,6 +60,9 @@ public class Main : Node
 
 	public void ProcessPlayerDeath()
 	{
+		if (Level.GameOver)
+			return;
+		
 		var hud = GetNode<HUD>("HUD");
 		var media = GetNode("MediaNode");
 		
