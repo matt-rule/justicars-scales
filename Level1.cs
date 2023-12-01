@@ -19,9 +19,11 @@ public class PlayerHistoricalState
 public class DryadHistoricalState
 {
 	public bool FacingLeft;
+	public int MaxHealth;
 	public int Health;
 	public Vector2 Position;
 	public Vector2 Velocity;
+	public bool Grounded;
 	public float CastProgressSecs;
 	public float CastCooldownSecs;
 	public DryadState AttackState;
@@ -42,6 +44,7 @@ public class DemonHistoricalState
 	public int Health;
 	public Vector2 Position;
 	public Vector2 Velocity;
+	public bool Grounded;
 	public bool InPlayerSwordRange;
 	public uint DamageId;
 	public bool Alive;
@@ -57,6 +60,7 @@ public class GoblinHistoricalState
 	public int Health;
 	public Vector2 Position;
 	public Vector2 Velocity;
+	public bool Grounded;
 	public bool InPlayerSwordRange;
 	public uint DamageId;
 	public bool Alive;
@@ -129,26 +133,28 @@ public class Level1 : Node
 	public PackedScene GoblinScene { get; set; }
 #pragma warning restore 649
 
+	public bool PlayerWasTouchingLantern = true;
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		List<Vector2> dryadSpawnLocations = new List<Vector2>();
-		dryadSpawnLocations.Add(new Vector2(1393, 153));
-		dryadSpawnLocations.Add(new Vector2(1459, 153));
-		dryadSpawnLocations.Add(new Vector2(1593, 153));
-		dryadSpawnLocations.Add(new Vector2(1659, 153));
-		var dryadsNode = GetNodeOrNull("Dryads");
-
-		var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
-		
-		foreach (Vector2 location in dryadSpawnLocations)
-		{
-			Dryad dryad = (Dryad)DryadScene.Instance();
-			dryad.Target = PlayerCharNode;
-			dryad.Position = location;
-			dryad.DamageId = GD.Randi();
-			dryadsNode.AddChild(dryad);
-		}
+//		List<Vector2> dryadSpawnLocations = new List<Vector2>();
+//		dryadSpawnLocations.Add(new Vector2(1393, 153));
+//		dryadSpawnLocations.Add(new Vector2(1459, 153));
+//		dryadSpawnLocations.Add(new Vector2(1593, 153));
+//		dryadSpawnLocations.Add(new Vector2(1659, 153));
+//		var dryadsNode = GetNodeOrNull("Dryads");
+//
+//		var PlayerCharNode = GetNode<PlayerChar>("PlayerChar");
+//
+//		foreach (Vector2 location in dryadSpawnLocations)
+//		{
+//			Dryad dryad = (Dryad)DryadScene.Instance();
+//			dryad.Target = PlayerCharNode;
+//			dryad.Position = location;
+//			dryad.DamageId = GD.Randi();
+//			dryadsNode.AddChild(dryad);
+//		}
 		
 		var playerCharNode = GetNode<PlayerChar>("PlayerChar");
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
@@ -211,7 +217,10 @@ public class Level1 : Node
 			
 			var dryadHistory = new DryadHistoricalState();
 			dryadHistory.FacingLeft = sprite.FlipH;
+			dryadHistory.MaxHealth = dryad.MaxHealth;
 			dryadHistory.Health = dryad.Health;
+			dryadHistory.Velocity = dryad.Velocity;
+			dryadHistory.Grounded = dryad.Grounded;
 			dryadHistory.Position = dryad.Position;
 			dryadHistory.AttackState = dryad.State;
 			dryadHistory.LastStartCastTimestamp = dryad.LastStartCastTimestamp;
@@ -243,6 +252,8 @@ public class Level1 : Node
 			var demonHistory = new DemonHistoricalState();
 			demonHistory.FacingLeft = sprite.FlipH;
 			demonHistory.Health = demon.Health;
+			demonHistory.Grounded = demon.Grounded;
+			demonHistory.Velocity = demon.Velocity;
 			demonHistory.Position = demon.Position;
 			demonHistory.InPlayerSwordRange = demon.InPlayerSwordRange;
 			demonHistory.DamageId = demon.DamageId;
@@ -266,6 +277,8 @@ public class Level1 : Node
 			var goblinHistory = new GoblinHistoricalState();
 			goblinHistory.FacingLeft = sprite.FlipH;
 			goblinHistory.Health = goblin.Health;
+			goblinHistory.Grounded = goblin.Grounded;
+			goblinHistory.Velocity = goblin.Velocity;
 			goblinHistory.Position = goblin.Position;
 			goblinHistory.InPlayerSwordRange = goblin.InPlayerSwordRange;
 			goblinHistory.DamageId = goblin.DamageId;
@@ -383,7 +396,10 @@ public class Level1 : Node
 			var sprite = newDryad.GetNode<AnimatedSprite>("AnimatedSprite");
 			
 			sprite.FlipH = dryadHistory.FacingLeft;
+			newDryad.MaxHealth = dryadHistory.MaxHealth;
 			newDryad.Health = dryadHistory.Health;
+			newDryad.Velocity = dryadHistory.Velocity;
+			newDryad.Grounded = dryadHistory.Grounded;
 			newDryad.Position = dryadHistory.Position;
 			newDryad.State = dryadHistory.AttackState;
 			newDryad.LastStartCastTimestamp = dryadHistory.LastStartCastTimestamp + timeDiff;
@@ -397,8 +413,8 @@ public class Level1 : Node
 					&& report.Timestamp > levelHistory.Timestamp)
 				{
 					newDryad.Health -= report.Amount;
-					if (newDryad.Health > Dryad.MAX_HEALTH)
-						newDryad.Health = Dryad.MAX_HEALTH;
+					if (newDryad.Health > newDryad.MaxHealth)
+						newDryad.Health = newDryad.MaxHealth;
 					if (newDryad.Health <= 0)
 					{
 						newDryad.QueueFree();
@@ -429,6 +445,8 @@ public class Level1 : Node
 			
 			sprite.FlipH = demonHistory.FacingLeft;
 			newDemon.Health = demonHistory.Health;
+			newDemon.Velocity = demonHistory.Velocity;
+			newDemon.Grounded = demonHistory.Grounded;
 			newDemon.Position = demonHistory.Position;
 			newDemon.InPlayerSwordRange = demonHistory.InPlayerSwordRange;
 			newDemon.Target = playerCharNode;
@@ -470,6 +488,8 @@ public class Level1 : Node
 			
 			sprite.FlipH = goblinHistory.FacingLeft;
 			newGoblin.Health = goblinHistory.Health;
+			newGoblin.Velocity = goblinHistory.Velocity;
+			newGoblin.Grounded = goblinHistory.Grounded;
 			newGoblin.Position = goblinHistory.Position;
 			newGoblin.InPlayerSwordRange = goblinHistory.InPlayerSwordRange;
 			newGoblin.Target = playerCharNode;
@@ -547,8 +567,8 @@ public class Level1 : Node
 					{
 						playerCharNode.Health -= halfAmount;
 						dryad.Health += halfAmount;
-						if (dryad.Health > Dryad.MAX_HEALTH)
-							dryad.Health = Dryad.MAX_HEALTH;
+						if (dryad.Health > dryad.MaxHealth)
+							dryad.Health = dryad.MaxHealth;
 							
 						var divineReport1 = new DivineDamageReport();
 						divineReport1.Who = 0;
@@ -816,26 +836,46 @@ public class Level1 : Node
 		var spawnPoint = GetParent().GetNode<Position2D>("StartPosition");
 		
 		bool showHint = false;
+		bool touchingAnyLantern = false;
 		foreach (var c in GetNode("Lanterns").GetChildren())
 		{
 			var lantern = c as Lantern;
 			if (lantern == null)
 				continue;
 				
-			if (Math.Abs(playerCharNode.Position.x - lantern.Position.x) > LANTERN_DISTANCE)
+			if (
+				Math.Abs(playerCharNode.Position.x - lantern.Position.x) > LANTERN_DISTANCE
+				|| Math.Abs(playerCharNode.Position.y - lantern.Position.y) > LANTERN_DISTANCE * 3
+			)
 				continue;
 
-			showHint = true;
-			hud.ShowHint(lantern.Text);
+			touchingAnyLantern = true;
+			if (lantern.Text != null && lantern.Text != "")
+			{
+				showHint = true;
+				hud.ShowHint(lantern.Text);	
+			}
+			if (!PlayerWasTouchingLantern)
+			{
+				mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
+				PlayerWasTouchingLantern = true;
+				playerCharNode.Health = MAX_HEALTH;
+				playerCharNode.PendingHourglass = false;
+				playerCharNode.UsedHourglassTimestamp = 0;
+				playerCharNode.PendingScales = false;
+				playerCharNode.UsedScalesTimestamp = 0;
+			}
+			
 			if (lantern.Animation == "on")
 				continue;
 			
 			lantern.Animation = "on";
-			if (spawnPoint.Position.x < lantern.Position.x)
+			if (!lantern.DisableCheckpoint && spawnPoint.Position.x < lantern.Position.x)
 				spawnPoint.Position = lantern.Position;
-			mediaNode.GetNode<AudioStreamPlayer>("LanternSound").Play();
-			playerCharNode.Health = MAX_HEALTH;
 		}
+		
+		if (!touchingAnyLantern)
+			PlayerWasTouchingLantern = false;
 		
 		if (!showHint)
 			hud.HideHint();

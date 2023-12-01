@@ -111,7 +111,7 @@ margin_bottom = -43.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="StartPosition" type="Position2D" parent="."]
-position = Vector2( -200, 100 )
+position = Vector2( -984, 148 )
 
 [node name="MediaNode" type="Node" parent="."]
 

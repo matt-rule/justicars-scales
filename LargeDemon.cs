@@ -7,6 +7,7 @@ public class LargeDemon : KinematicBody2D
 	public static int MAX_RANGE = 30;
 	public static int MIN_RANGE = 20;
 	public static float LOS = 100;
+	public static int GRAVITY = 900;
 	public const int MAX_HEALTH = 120;
 	public static double HIDE_HP_BAR_SECS = 4;
 	public static int HP_BAR_WIDTH = 20;
@@ -23,6 +24,9 @@ public class LargeDemon : KinematicBody2D
 	public bool AttackPending = false;
 	public bool PlayerInSwipeRange = false;
 	public bool Alive = true;
+	
+	public Vector2 Velocity = new Vector2();
+	public bool Grounded = false;
 
 	[Export]
 	public int Health = MAX_HEALTH;
@@ -38,18 +42,106 @@ public class LargeDemon : KinematicBody2D
 		Target = GetParent().GetParent().GetNode<PlayerChar>("PlayerChar");
 	}
 	
+	public bool AgainstRightWall()
+	{
+		for (int i = 0; i < GetSlideCount(); ++i)
+		{
+			var collision = GetSlideCollision( i );
+			if (collision.Normal.x < 0)
+				return true;
+		}
+		return false;
+	}
+	
+	public bool BlockedByWall(float direction)
+	{
+		if (!IsOnWall())
+			return false;
+		if (direction > 0 && AgainstRightWall())
+			return true;
+		if (direction < 0 && !AgainstRightWall())
+			return true;
+		return false;
+	}
+	
 	public float AiGetDirection()
 	{
 		return Target.Position.x - Position.x;
 	}
-	
-	public void AiMove()
+//
+//	public void AiMove()
+//	{
+//		float direction = AiGetDirection();
+//
+//		AnimatedSprite sprite = 
+//			GetNode<AnimatedSprite>("AnimatedSprite");
+//		float absoluteDistance = Math.Abs(direction);
+//
+//		if (absoluteDistance > LOS)
+//		{
+//			sprite.Animation = "idle";
+//			return;
+//		}
+//
+//		if (absoluteDistance > MAX_RANGE)
+//		{
+//			sprite.FlipH = direction < 0;
+//			var Motion = Math.Sign(direction) * MOVE_SPEED;
+//			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
+//			if (sprite.Animation != "walking")
+//				sprite.Animation = "walking";
+//		}
+//		else if (absoluteDistance < MIN_RANGE)
+//		{
+//			sprite.FlipH = direction > 0;
+//			var Motion = -Math.Sign(direction) * MOVE_SPEED;
+//			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
+//			if (sprite.Animation != "walking")
+//				sprite.Animation = "walking";
+//		}
+//		else
+//		{
+//			sprite.FlipH = direction < 0;
+//
+//			if (LastAttackTimestamp + ATTACK_COOLDOWN_SECS < Time.GetUnixTimeFromSystem() )
+//			{
+//				LastAttackTimestamp = Time.GetUnixTimeFromSystem();
+//				sprite.Animation = "attacking";
+//				AttackPending = true;
+//			}
+//			else if (LastAttackTimestamp + ATTACK_RESET_ANIMATION > Time.GetUnixTimeFromSystem() )
+//			{
+//				if (sprite.Animation != "attacking")
+//					sprite.Animation = "attacking";
+//			}
+//			else
+//				sprite.Animation = "idle";
+//		}
+//
+//		var swipeCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwipeCollisionShape");
+//		if (sprite.FlipH)
+//		{
+//			swipeCollisionShape.Position = new Vector2 (-10, -10);
+//		}
+//		else
+//		{
+//			swipeCollisionShape.Position = new Vector2 (10, -10);
+//		}
+//	}
+
+	public void AiMove(float delta)
 	{
-		float direction = AiGetDirection();
+		var levelNode = GetParent().GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
+		if (!Alive)
+			return;
+			
+		float directionToPlayer = AiGetDirection();
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
-		float absoluteDistance = Math.Abs(direction);
+		float absoluteDistance = Math.Abs(directionToPlayer);
 		
 		if (absoluteDistance > LOS)
 		{
@@ -59,29 +151,50 @@ public class LargeDemon : KinematicBody2D
 		
 		if (absoluteDistance > MAX_RANGE)
 		{
-			sprite.FlipH = direction < 0;
-			var Motion = Math.Sign(direction) * MOVE_SPEED;
-			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
-			if (sprite.Animation != "walking")
+			if (BlockedByWall(directionToPlayer))
+			{
+				sprite.FlipH = directionToPlayer > 0;
+				sprite.Animation = "idle";
+			}
+			else
+			{
+				sprite.FlipH = directionToPlayer < 0;
 				sprite.Animation = "walking";
-		}
-		else if (absoluteDistance < MIN_RANGE)
-		{
-			sprite.FlipH = direction > 0;
-			var Motion = -Math.Sign(direction) * MOVE_SPEED;
-			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
-			if (sprite.Animation != "walking")
-				sprite.Animation = "walking";
+			}
+			Velocity.x = Math.Sign(directionToPlayer) * MOVE_SPEED;
 		}
 		else
 		{
-			sprite.FlipH = direction < 0;
+			if (absoluteDistance < MIN_RANGE/* && !IsOnWall()*/)
+			{
+				if (BlockedByWall(-directionToPlayer))
+				{
+					sprite.FlipH = directionToPlayer < 0;
+					sprite.Animation = "idle";
+				}
+				else
+				{
+					sprite.FlipH = directionToPlayer > 0;
+					sprite.Animation = "walking";	
+				}
+				Velocity.x = -Math.Sign(directionToPlayer) * MOVE_SPEED;
+			}
+			else
+			{
+				sprite.FlipH = directionToPlayer < 0;
+				Velocity.x = 0;
+			}
 			
 			if (LastAttackTimestamp + ATTACK_COOLDOWN_SECS < Time.GetUnixTimeFromSystem() )
 			{
 				LastAttackTimestamp = Time.GetUnixTimeFromSystem();
 				sprite.Animation = "attacking";
 				AttackPending = true;
+				
+				AudioStreamPlayer2D swingSound =
+					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer2D>("SwingSound");
+				swingSound.Position = Position;
+				swingSound.Play();
 			}
 			else if (LastAttackTimestamp + ATTACK_RESET_ANIMATION > Time.GetUnixTimeFromSystem() )
 			{
@@ -92,14 +205,56 @@ public class LargeDemon : KinematicBody2D
 				sprite.Animation = "idle";
 		}
 		
-		var swipeCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwipeCollisionShape");
+		var attackCollisionShape = GetNode<Area2D>("Area2D").GetNode<CollisionShape2D>("SwipeCollisionShape");
 		if (sprite.FlipH)
 		{
-			swipeCollisionShape.Position = new Vector2 (-10, -10);
+			attackCollisionShape.Position = new Vector2 (-17, 5);
 		}
 		else
 		{
-			swipeCollisionShape.Position = new Vector2 (10, -10);
+			attackCollisionShape.Position = new Vector2 (17, 5);
+		}
+		
+		if (Grounded)
+			Velocity.y = 0;
+		else
+			Velocity.y += GRAVITY * delta; // Gravity
+
+		bool wasGrounded = Grounded;
+		if (Velocity.x != 0)
+		{
+//			if (Grounded && !IsOnWall())
+//			{
+//				var grassSound = GetNode<AudioStreamPlayer2D>("GrassSound");
+//				if (!grassSound.Playing)
+//					grassSound.Play();
+//			}
+			Grounded = false;
+		}
+
+		float oldYVelocity = Velocity.y;
+
+		Velocity = MoveAndSlide(Velocity, Vector2.Up);
+		
+		if (IsOnFloor())
+		{
+			Grounded = true;
+			
+			if (!wasGrounded)
+			{
+//				var grassSound = GetNode<AudioStreamPlayer2D>("GrassSound");
+//				if (!grassSound.Playing)
+//					grassSound.Play();
+
+				if (oldYVelocity > 360)
+				{
+					var landingSound =
+						mainNode.GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("LandingSound");
+					landingSound.Position = Position;
+					landingSound.Play();
+				}
+			}
 		}
 	}
 	
@@ -122,7 +277,7 @@ public class LargeDemon : KinematicBody2D
 			return;
 		}
 		
-		AiMove();
+		AiMove(delta);
 		
 		if (AttackPending
 			&& LastAttackTimestamp + ATTACK_DELAY < now )

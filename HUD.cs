@@ -127,11 +127,12 @@ public class HUD : CanvasLayer
 			case DialogBehaviour.QuitToMainMenu:
 				{
 					Main mainNode = GetParent<Main>();
+		
+					mainNode.GetNode<Position2D>("StartPosition").Position = new Vector2(-984, 148);
 					mainNode.GetNode<Camera2D>("MainMenuCam").Current = true;
 					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
-					mainNode.GetNode<Position2D>("StartPosition").Position = new Vector2(2727, 160);
 					GetNode<TextureRect>("MainMenuLogo").Show();
 					GetNode<Label>("MainMenuLabel1").Show();
 					GetNode<Label>("MainMenuLabel2").Show();

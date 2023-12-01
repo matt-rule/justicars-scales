@@ -15,11 +15,12 @@ public class Dryad : KinematicBody2D
 	public static int MIN_RANGE = 80;
 	public static float POSITION_SPREAD = 70.0f;
 	public static float FIRE_POSITION_OFFSET = 25.0f;
-	public static float LOS = 140;
+	public static int GRAVITY = 600;
+	public static float LOS = 200;
 	public static int NUM_FIRES = 3;
 	public static int HP_BAR_WIDTH = 12;
 	public static double HIDE_HP_BAR_SECS = 4;
-	public static int MAX_HEALTH = 100;
+	public static int DEFAULT_MAX_HEALTH = 100;
 	public static double DRYAD_CAST_DURATION_SECS = 1.5;
 	public static double DRYAD_INNER_COOLDOWN_DURATION_SECS = 3;	// After cast
 	public static double DRYAD_FULL_COOLDOWN_DURATION_SECS =
@@ -27,15 +28,22 @@ public class Dryad : KinematicBody2D
 	public static double DRYAD_FINISH_ATTACK_DURATION_SECS = 0.6;
 	
 	[Export]
-	public int Health = MAX_HEALTH;
+	public int MaxHealth = DEFAULT_MAX_HEALTH;
+	
+	[Export]
+	public int Health = DEFAULT_MAX_HEALTH;
 	
 	[Export]
 	public PlayerChar Target = null;
 	
+	[Export]
 	public uint DamageId = 0;
 	
 	[Export]
 	public bool InPlayerSwordRange = false;
+	
+	public Vector2 Velocity = new Vector2();
+	public bool Grounded = false;
 	
 	public double LastAffectedTimestamp = 0;
 	
@@ -51,6 +59,29 @@ public class Dryad : KinematicBody2D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+		Target = GetParent().GetParent().GetNode<PlayerChar>("PlayerChar");
+	}
+	
+	public bool AgainstRightWall()
+	{
+		for (int i = 0; i < GetSlideCount(); ++i)
+		{
+			var collision = GetSlideCollision( i );
+			if (collision.Normal.x < 0)
+				return true;
+		}
+		return false;
+	}
+	
+	public bool BlockedByWall(float direction)
+	{
+		if (!IsOnWall())
+			return false;
+		if (direction > 0 && AgainstRightWall())
+			return true;
+		if (direction < 0 && !AgainstRightWall())
+			return true;
+		return false;
 	}
 
 	public float AiGetDirection()
@@ -94,37 +125,58 @@ public class Dryad : KinematicBody2D
 		}
 	}
 	
-	public void AiMove()
+	public void AiMove(float delta)
 	{
+		var levelNode = GetParent().GetParent<Level1>();
+		var mainNode = levelNode.GetParent();
+		
 		if (LastStartCastTimestamp + DRYAD_CAST_DURATION_SECS + DRYAD_FINISH_ATTACK_DURATION_SECS > Time.GetUnixTimeFromSystem() )
 			return;
 		
-		float direction = AiGetDirection();
+		float directionToPlayer = AiGetDirection();
 		
 		AnimatedSprite sprite = 
 			GetNode<AnimatedSprite>("AnimatedSprite");
-		float absoluteDistance = Math.Abs(direction);
+		float absoluteDistance = Math.Abs(directionToPlayer);
 		
 		if (absoluteDistance > LOS)
 			return;
 		
 		if (absoluteDistance > MAX_RANGE)
 		{
-			sprite.FlipH = direction < 0;
-			var Motion = Math.Sign(direction) * MOVE_SPEED;
-			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
-			sprite.Animation = "walking";
-		}
-		else if (absoluteDistance < MIN_RANGE)
-		{
-			sprite.FlipH = direction > 0;
-			var Motion = -Math.Sign(direction) * MOVE_SPEED;
-			MoveAndSlide( new Vector2(Motion, 0), Vector2.Up );
-			sprite.Animation = "walking";	
+			if (BlockedByWall(directionToPlayer))
+			{
+				sprite.FlipH = directionToPlayer > 0;
+				sprite.Animation = "idle";
+			}
+			else
+			{
+				sprite.FlipH = directionToPlayer < 0;
+				sprite.Animation = "walking";
+			}
+			Velocity.x = Math.Sign(directionToPlayer) * MOVE_SPEED;
 		}
 		else
 		{
-			sprite.FlipH = direction < 0;
+			if (absoluteDistance < MIN_RANGE/* && !IsOnWall()*/)
+			{
+				if (BlockedByWall(-directionToPlayer))
+				{
+					sprite.FlipH = directionToPlayer < 0;
+					sprite.Animation = "idle";
+				}
+				else
+				{
+					sprite.FlipH = directionToPlayer > 0;
+					sprite.Animation = "walking";	
+				}
+				Velocity.x = -Math.Sign(directionToPlayer) * MOVE_SPEED;
+			}
+			else
+			{
+				sprite.FlipH = directionToPlayer < 0;
+				Velocity.x = 0;
+			}
 			
 			if (LastStartCastTimestamp + DRYAD_FULL_COOLDOWN_DURATION_SECS < Time.GetUnixTimeFromSystem() )
 			{
@@ -138,6 +190,48 @@ public class Dryad : KinematicBody2D
 			}
 			else
 				sprite.Animation = "idle";
+		} 
+		
+		if (Grounded)
+			Velocity.y = 0;
+		else
+			Velocity.y += GRAVITY * delta; // Gravity
+
+		bool wasGrounded = Grounded;
+		if (Velocity.x != 0)
+		{
+//			if (Grounded && !IsOnWall())
+//			{
+//				var grassSound = GetNode<AudioStreamPlayer2D>("GrassSound");
+//				if (!grassSound.Playing)
+//					grassSound.Play();
+//			}
+			Grounded = false;
+		}
+
+		float oldYVelocity = Velocity.y;
+
+		Velocity = MoveAndSlide(Velocity, Vector2.Up);
+		
+		if (IsOnFloor())
+		{
+			Grounded = true;
+			
+			if (!wasGrounded)
+			{
+//				var grassSound = GetNode<AudioStreamPlayer2D>("GrassSound");
+//				if (!grassSound.Playing)
+//					grassSound.Play();
+
+				if (oldYVelocity > 360)
+				{
+					var landingSound =
+						mainNode.GetNode("MediaNode")
+							.GetNode<AudioStreamPlayer2D>("LandingSound");
+					landingSound.Position = Position;
+					landingSound.Play();
+				}
+			}
 		}
 	}
 
@@ -156,7 +250,7 @@ public class Dryad : KinematicBody2D
 			return;
 		}
 		
-		AiMove();
+		AiMove(delta);
 	}
 	
 	public override void _Process(float delta)
@@ -164,7 +258,7 @@ public class Dryad : KinematicBody2D
 		bool visible = LastAffectedTimestamp + HIDE_HP_BAR_SECS > Time.GetUnixTimeFromSystem();
 		var rectRemaining = GetNode<ColorRect>("HPRectRemaining");
 		var rectBg = GetNode<ColorRect>("HPRectBg");
-		rectRemaining.RectSize = new Vector2((float)Health / MAX_HEALTH * HP_BAR_WIDTH, 2);
+		rectRemaining.RectSize = new Vector2((float)Health / MaxHealth * HP_BAR_WIDTH, 2);
 		rectRemaining.Visible = visible;
 		rectBg.Visible = visible;
 	}

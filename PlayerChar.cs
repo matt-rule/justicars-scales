@@ -226,18 +226,21 @@ public class PlayerChar : KinematicBody2D
 		// Process vertical movement first to allow jumping,
 		// because horizontal movement sets Grounded := false.
 		bool attacking = LastAttackTimestamp + ATTACK_ANIMATION_FINISHED > Time.GetUnixTimeFromSystem();
-		if (Grounded && !attacking)
+		if (Grounded)
 		{
-			if (Input.IsActionPressed("move_up"))
+			if (!attacking)
 			{
-				Velocity.y = -JUMP_FORCE;
-				Grounded = false;
-				var jumpSound = GetNode<AudioStreamPlayer2D>("JumpSound");
-				if (!jumpSound.Playing)
-					jumpSound.Play();
+				if (Input.IsActionPressed("move_up"))
+				{
+					Velocity.y = -JUMP_FORCE;
+					Grounded = false;
+					var jumpSound = GetNode<AudioStreamPlayer2D>("JumpSound");
+					if (!jumpSound.Playing)
+						jumpSound.Play();
+				}
+				else
+					Velocity.y = 0;
 			}
-			else
-				Velocity.y = 0;
 		}
 		else
 			Velocity.y += GRAVITY * delta; // Gravity
