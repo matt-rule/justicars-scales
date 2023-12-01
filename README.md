@@ -24,3 +24,9 @@ The hourglass allows you to jump back in time, resetting enemies, your position,
 The scales allow you to balance out all damage done recently.
 When travelling back in time, divine damage from the scales does not reset.
 If your health drops into the left side of the bar, you have only moments to save yourself.
+
+CREDITS:
+
+Design & dev: Matthew Rule (Canoparia Games)
+
+Sound Effects (freesound.org): BloodPixelHero, dermotte, Glen_Hoban, GowlerMusic, IanStarGem, Jagadamba, JoelAudio, julius_galla, klankbeeld, MATRIXXX_, maxmakessounds, MisterSegev, Motion_S, Nox_Sound, SoundFlakes, spookymodem, TriqyStudio
