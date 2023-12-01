@@ -42,7 +42,8 @@ public class Main : Node
 		ScreenSize = Level.GetNode<PlayerChar>("PlayerChar").GetViewportRect().Size;
 		
 		GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Stop();
-		GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Play();
+		if ( !hud.GetNode<TextureButton>("MusicToggleButton").Pressed )
+			GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Play();
 					
 		hud.GetNode<TextureRect>("MainMenuLogo").Hide();
 		hud.GetNode<Label>("MainMenuLabel1").Hide();

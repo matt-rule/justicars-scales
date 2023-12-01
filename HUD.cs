@@ -137,7 +137,8 @@ public class HUD : CanvasLayer
 					mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 					mainNode.GetNode("Level1").QueueFree();
 					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
-					mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
+					if (!GetNode<TextureButton>("MusicToggleButton").Pressed)
+						mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
 					GetNode<Label>("VictoryLabel").Hide();
 					GetNode<TextureRect>("MainMenuLogo").Show();
 					GetNode<Label>("MainMenuLabel1").Show();
@@ -203,5 +204,24 @@ public class HUD : CanvasLayer
 		GetNode<Label>("MainMenuLabel1").Show();
 		GetNode<Label>("MainMenuLabel2").Show();
 		GetNode<Panel>("MainMenuPanel").Show();
+	}
+	
+	private void OnMusicButtonToggled(bool button_pressed)
+	{
+		var main = GetParent();
+		var media = main.GetNode("MediaNode");
+		
+		if ( button_pressed )
+		{
+			media.GetNode<AudioStreamPlayer>("Music").Stop();
+			media.GetNode<AudioStreamPlayer>("MenuMusic").Stop();
+		}
+		else
+		{
+			if (GetNode<Panel>("MainMenuPanel").Visible)
+				media.GetNode<AudioStreamPlayer>("MenuMusic").Play();
+			else
+				media.GetNode<AudioStreamPlayer>("Music").Play();
+		}
 	}
 }

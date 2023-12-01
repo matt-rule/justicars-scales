@@ -1166,7 +1166,8 @@ public class Level1 : Node
 		mainNode.Level.GetNode<PlayerChar>("PlayerChar").GetNode<Camera2D>("Camera2D").Current = false;
 		mainNode.GetNode("Level1").QueueFree();
 		mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("Music").Stop();
-		mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
+		if (!hud.GetNode<TextureButton>("MusicToggleButton").Pressed)
+			mainNode.GetNode("MediaNode").GetNode<AudioStreamPlayer>("MenuMusic").Play();
 		hud.GetNode<Label>("VictoryLabel").Hide();
 		hud.GetNode<TextureRect>("MainMenuLogo").Show();
 		hud.GetNode<Label>("MainMenuLabel1").Show();

@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://HUD.cs" type="Script" id=1]
 [ext_resource path="res://assets/effect_overlay.png" type="Texture" id=2]
@@ -8,6 +8,8 @@
 [ext_resource path="res://fonts/Abibas.ttf" type="DynamicFontData" id=6]
 [ext_resource path="res://assets/icon-hourglass.png" type="Texture" id=7]
 [ext_resource path="res://assets/icon-scales.png" type="Texture" id=8]
+[ext_resource path="res://assets/music-on-icon.png" type="Texture" id=9]
+[ext_resource path="res://assets/music-off-icon.png" type="Texture" id=10]
 
 [sub_resource type="AtlasTexture" id=7]
 atlas = ExtResource( 2 )
@@ -461,6 +463,17 @@ custom_fonts/font = SubResource( 6 )
 text = "You Died"
 align = 1
 
+[node name="MusicToggleButton" type="TextureButton" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_left = 3.0
+margin_top = -17.0
+margin_right = 17.0
+margin_bottom = -3.0
+toggle_mode = true
+texture_normal = ExtResource( 9 )
+texture_pressed = ExtResource( 10 )
+
 [connection signal="pressed" from="InfoPanel/ProceedButton" to="." method="OnStartButtonPressed"]
 [connection signal="pressed" from="PauseMenuPanel/VBoxContainer/ResumeButton" to="." method="ResumeButtonPressed"]
 [connection signal="pressed" from="PauseMenuPanel/VBoxContainer/RestartButton" to="." method="RestartGameButtonPressed"]
@@ -470,3 +483,4 @@ align = 1
 [connection signal="pressed" from="RestartDialogPanel/VBoxContainer/HBoxContainer/YesButton" to="." method="YesButtonPressed"]
 [connection signal="pressed" from="RestartDialogPanel/VBoxContainer/HBoxContainer/NoButton" to="." method="NoButtonPressed"]
 [connection signal="pressed" from="CreditsPanel/VBoxContainer/CloseButton" to="." method="CloseCreditsButtonPressed"]
+[connection signal="toggled" from="MusicToggleButton" to="." method="OnMusicButtonToggled"]
